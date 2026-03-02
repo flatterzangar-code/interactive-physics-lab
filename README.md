@@ -146,4 +146,6 @@ Flutter Developer | Educational App Project
 
 ⭐ If you like this project, consider giving it a star!
 
+## 📥 Download APK
 
+👉 [Download Latest Version](https://github.com/flatterzangar-code/interactive-physics-lab/releases/latest)
