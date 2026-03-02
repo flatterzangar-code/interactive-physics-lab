@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Kinematics Lab - Mobile</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #0f172a;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column; /* Вертикальды орналасу */
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        /* --- ЖОҒАРҒЫ ЖАҚ: СИМУЛЯЦИЯ --- */
+        .simulation-container {
+            width: 100%;
+            height: 380px; /* Мобильді биіктік */
+            position: relative;
+            background: #0f172a;
+            border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+            flex-shrink: 0;
+        }
+
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* Glassmorphism Controls Overlay */
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
+        }
+
+        .control-item { flex: 1; min-width: 120px; font-size: 11px; }
+
+        /* --- ТӨМЕНГІ ЖАҚ: ТЕОРИЯ ЖӘНЕ ТЕСТ --- */
+        .theory-panel {
+            flex: 1;
+            padding: 20px;
+            background: #1e293b;
+            box-sizing: border-box;
+        }
+
+        h2, h3 { color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; font-size: 18px; }
+        .card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 15px; font-size: 14px; line-height: 1.6; }
+        .formula { display: block; text-align: center; font-size: 20px; color: #fbbf24; margin: 10px 0; font-family: serif; }
+
+        /* ТЕСТ СТИЛЬДЕРІ */
+        .quiz-option {
+            background: #0f172a;
+            padding: 14px;
+            margin: 10px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 1px solid #334155;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        .correct { background: #064e3b !important; border-color: #22c55e !important; }
+        .wrong { background: #450a0a !important; border-color: #ef4444 !important; }
+
+        .reset-btn {
+            width: 100%; padding: 12px; background: #38bdf8; border: none;
+            border-radius: 10px; color: white; font-weight: bold; cursor: pointer;
+            font-size: 14px; margin-top: 5px;
+        }
+        
+        input[type=range] { width: 100%; accent-color: #38bdf8; }
+    </style>
+</head>
+<body>
+
+<div class="simulation-container">
+    <div class="controls">
+        <div class="control-item">
+            G: <span id="val-g">0.5</span>
+            <input type="range" min="0.1" max="1.5" step="0.1" value="0.5" id="gravityRange">
+        </div>
+        <div class="control-item">
+            Bounce: <span id="val-b">0.7</span>
+            <input type="range" min="0.1" max="0.99" step="0.05" value="0.75" id="bounceRange">
+        </div>
+        <button class="reset-btn" onclick="resetBall()">Қайта іске қосу</button>
+    </div>
+    <canvas id="canvas"></canvas>
+</div>
+
+<div class="theory-panel">
+    <h2>Кинематика негіздері</h2>
+    
+    <div class="card">
+        <b>Кинематика</b> — денелердің қозғалысын оған әсер ететін күштерді ескермей зерттейтін механика бөлімі.
+    </div>
+
+    <h3>Негізгі формулалар:</h3>
+    <div class="card">
+        <span class="formula">h = (g · t²) / 2</span>
+        <span class="formula">v = v₀ + g · t</span>
+    </div>
+
+    <h3>Симуляция көрсеткіштері:</h3>
+    <ul style="font-size: 13px; color: #cbd5e1; padding-left: 20px;">
+        <li><b style="color: #f472b6;">Қызғылт шар:</b> Зерттелетін дене.</li>
+        <li><b style="color: #38bdf8;">Көк сызық:</b> Жылдамдық векторы.</li>
+        <li><b>Bounce:</b> Соқтығысқандағы энергияның сақталуы.</li>
+    </ul>
+
+    <div id="quiz-box">
+        <h3>Лабораториялық Тест</h3>
+        <div id="quiz-container"></div>
+        <p id="quiz-result" style="text-align:center; font-weight:bold; color: #38bdf8; margin-top: 20px;"></p>
+    </div>
+
+    <div style="height: 40px;"></div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resize() {
+        width = canvas.offsetWidth;
+        height = canvas.offsetHeight;
+        canvas.width = width;
+        canvas.height = height;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const gInput = document.getElementById('gravityRange');
+    const bInput = document.getElementById('bounceRange');
+    const gVal = document.getElementById('val-g');
+    const bVal = document.getElementById('val-b');
+
+    let x, y, vx, vy, gravity, bounce;
+    const radius = 15;
+    let trail = [];
+
+    function init() {
+        x = 50; y = 150; vx = 5; vy = 0; trail = [];
+        gravity = parseFloat(gInput.value);
+        bounce = parseFloat(bInput.value);
+    }
+
+    gInput.addEventListener('input', (e) => { gravity = parseFloat(e.target.value); gVal.innerText = gravity; });
+    bInput.addEventListener('input', (e) => { bounce = parseFloat(e.target.value); bVal.innerText = bounce; });
+
+    function drawHUD() {
+        ctx.fillStyle = "rgba(56, 189, 248, 0.9)";
+        ctx.font = "bold 12px Arial";
+        ctx.textAlign = "left";
+        ctx.fillText(`v_y: ${vy.toFixed(1)}`, x + 20, y - 10);
+        ctx.fillText(`h: ${(height - y - radius).toFixed(0)}`, x + 20, y + 5);
+    }
+
+    function loop() {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, width, height);
+
+        // Физика
+        vy += gravity;
+        x += vx; y += vy;
+
+        // Соқтығысу
+        if (y + radius > height) { 
+            y = height - radius; 
+            vy *= -bounce; 
+            // Тоқтап қалмау үшін минималды серпіліс
+            if(Math.abs(vy) < 1) vy = 0; 
+        }
+        if (x + radius > width || x - radius < 0) { vx *= -1; }
+
+        // Трейл
+        trail.push({x, y});
+        if (trail.length > 40) trail.shift();
+
+        // Трейл сызу
+        ctx.beginPath();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(56, 189, 248, 0.2)";
+        trail.forEach((p, i) => ctx.lineTo(p.x, p.y));
+        ctx.stroke();
+
+        // Жылдамдық векторы
+        ctx.beginPath();
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = 3;
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + vx * 6, y + vy * 6);
+        ctx.stroke();
+
+        // Шар
+        ctx.shadowBlur = 15; ctx.shadowColor = '#f472b6';
+        ctx.fillStyle = '#f472b6';
+        ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+
+        drawHUD();
+        requestAnimationFrame(loop);
+    }
+
+    // ТЕСТ БӨЛІМІ
+    const questions = [
+        { q: "Дененің қозғалыс траекториясын зерттейтін бөлім?", a: ["Динамика", "Статика", "Кинематика"], c: 2 },
+        { q: "Жоғары нүктеде дененің v_y жылдамдығы нешеге тең?", a: ["Максимум", "0", "g-ге тең"], c: 1 },
+        { q: "g әрпімен қандай шама белгіленеді?", a: ["Күш", "Еркін түсу үдеуі", "Жол"], c: 1 },
+        { q: "v = v₀ + gt формуласы нені анықтайды?", a: ["Орын ауыстыру", "Жылдамдық", "Масса"], c: 1 },
+        { q: "Серпімділік 1.0 болса, энергия жоғала ма?", a: ["Иә", "Жоқ", "Жартылай"], c: 1 }
+    ];
+
+    let userScore = 0;
+    function loadQuiz() {
+        const container = document.getElementById('quiz-container');
+        questions.forEach((q, i) => {
+            const div = document.createElement('div');
+            div.innerHTML = `<p style='font-size:14px; margin-top:20px;'>${i+1}. ${q.q}</p>` + 
+                q.a.map((opt, idx) => `<div class="quiz-option" onclick="checkAnswer(${i}, ${idx}, this)">${opt}</div>`).join('');
+            container.appendChild(div);
+        });
+    }
+
+    window.checkAnswer = (qi, ai, el) => {
+        if(el.parentElement.style.pointerEvents === 'none') return;
+        if(ai === questions[qi].c) { el.classList.add('correct'); userScore++; }
+        else { el.classList.add('wrong'); }
+        el.parentElement.style.pointerEvents = 'none';
+        if(qi === questions.length - 1) document.getElementById('quiz-result').innerText = `Нәтиже: ${questions.length}-тен ${userScore} дұрыс!`;
+    }
+
+    function resetBall() { init(); }
+
+    init();
+    loop();
+    loadQuiz();
+</script>
+
+</body>
+</html>

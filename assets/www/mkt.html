@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Молекулалық Физика: МКТ Лабораториясы</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #0f172a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column; /* Вертикальды орналасу */
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        /* --- ЖОҒАРҒЫ ЖАҚ: СИМУЛЯЦИЯ --- */
+        .simulation-container {
+            width: 100%;
+            height: 380px; /* Телефонға ыңғайлы биіктік */
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #0f172a;
+            border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+            flex-shrink: 0;
+        }
+
+        /* Басқару панелі (Анимация бетінде) */
+        .controls {
+            position: absolute;
+            top: 20px;
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 12px;
+            width: 240px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 10;
+        }
+
+        h2 { color: #38bdf8; text-transform: uppercase; font-size: 14px; margin-top: 0; }
+        h3 { color: #fbbf24; margin-top: 25px; border-left: 4px solid #fbbf24; padding-left: 10px; }
+
+        /* --- ТӨМЕНГІ ЖАҚ: АҚПАРАТ ПАНЕЛІ --- */
+        .info-panel {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.95);
+            padding: 25px 20px;
+            box-sizing: border-box;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .formula {
+            display: block;
+            text-align: center;
+            font-size: 18px;
+            margin: 15px 0;
+            color: #38bdf8;
+            font-family: "Times New Roman", serif;
+            font-style: italic;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        /* Тест стилі */
+        .quiz-container { margin-top: 30px; padding-bottom: 50px; }
+        .question { margin-bottom: 20px; font-size: 14px; }
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            text-align: left;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        .option-btn:hover { background: #334155; }
+        .selected { border-color: #38bdf8 !important; background: #0f172a !important; }
+
+        input[type=range] { width: 100%; cursor: pointer; accent-color: #38bdf8; }
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        #result-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #064e3b;
+            border-radius: 10px;
+            display: none;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="simulation-container">
+    <div class="controls">
+        <h2>Температура (T)</h2>
+        <div class="temp-display" id="tempVal" style="font-size: 28px; font-weight: bold; margin: 5px 0;">0°C</div>
+        <input type="range" id="tempRange" min="-273" max="500" value="0">
+        <div class="info" style="font-size: 11px; color: #94a3b8; margin-top: 8px;">
+            <span style="color:#ef4444">Ыстық = Жылдам</span> | 
+            <span style="color:#3b82f6">Суық = Баяу</span>
+        </div>
+    </div>
+    <canvas id="canvas"></canvas>
+</div>
+
+<div class="info-panel">
+    <h2>Молекулалық-кинетикалық теория</h2>
+    
+    <div class="card">
+        <b>МКТ-ның негізгі қағидасы:</b> Барлық денелер өте ұсақ бөлшектерден (молекулалардан) тұрады, олар үздіксіз және ретсіз қозғалыста болады.
+    </div>
+
+    <h3>Температураның физикалық мәні</h3>
+    <div class="card">
+        Температура — молекулалардың <b>орташа кинетикалық энергиясының</b> өлшемі. Симуляцияда көргеніңіздей, температура көтерілген сайын молекулалардың соқтығысу жиілігі мен жылдамдығы артады.
+    </div>
+
+    <h3>Негізгі формула:</h3>
+    <div class="formula">E = 3/2 · k · T</div>
+    <p style="font-size: 12px; color: #94a3b8;">Мұндағы <b>k</b> — Больцман тұрақтысы. Бұл формула энергия мен температураның тікелей байланысты екенін дәлелдейді.</p>
+
+    <h3>Өмірден мысалдар:</h3>
+    <div class="card">
+        <b>1. Диффузия:</b> Шайға салған қанттың ыстық суға тез еріп, суық суда баяу еритіні молекулалардың жылдамдығына байланысты.<br><br>
+        <b>2. Шиннің қысымы:</b> Күн ыстықта көлік дөңгелегіндегі ауа молекулалары қатты қозғалып, қысымды арттырады.
+    </div>
+
+    <div class="quiz-container">
+        <h3>Білім тексеру (Тест)</h3>
+        <div id="quiz"></div>
+        <button onclick="checkQuiz()" style="width: 100%; padding: 15px; background: #38bdf8; border: none; border-radius: 10px; color: #0f172a; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px;">Нәтижені көру</button>
+        <div id="result-box"></div>
+    </div>
+    <div style="height: 40px;"></div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+    function resize() {
+        width = canvas.parentElement.clientWidth;
+        height = canvas.parentElement.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const slider = document.getElementById('tempRange');
+    const display = document.getElementById('tempVal');
+    
+    let molecules = [];
+    const numMolecules = 100; // Мобильді құрылғылар үшін оңтайландырылды
+
+    class Molecule {
+        constructor() {
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.vx = (Math.random() - 0.5); 
+            this.vy = (Math.random() - 0.5);
+            this.radius = Math.random() * 3 + 2;
+        }
+
+        update(speedFactor) {
+            this.x += this.vx * speedFactor;
+            this.y += this.vy * speedFactor;
+            if (this.x < 0 || this.x > width) this.vx *= -1;
+            if (this.y < 0 || this.y > height) this.vy *= -1;
+        }
+
+        draw(color) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+    }
+
+    function init() {
+        for (let i = 0; i < numMolecules; i++) molecules.push(new Molecule());
+    }
+
+    function getColor(temp) {
+        let ratio = (temp + 273) / (500 + 273); 
+        let r = Math.floor(ratio * 255);
+        let b = Math.floor(255 - ratio * 200);
+        return `rgb(${r}, 100, ${b})`;
+    }
+
+    function animate() {
+        let tempInput = parseInt(slider.value);
+        display.innerText = tempInput + "°C";
+        let speed = (tempInput + 273) / 16;
+        let currentColor = getColor(tempInput);
+        display.style.color = currentColor;
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.4)'; 
+        ctx.fillRect(0, 0, width, height);
+
+        molecules.forEach(m => {
+            m.update(speed);
+            m.draw(currentColor);
+        });
+
+        requestAnimationFrame(animate);
+    }
+
+    // --- ТЕСТ ЛОГИКАСЫ ---
+    const quizData = [
+        { q: "Абсолют нөл температурасы нешеге тең?", a: ["0°C", "-273°C", "100°C"], c: 1 },
+        { q: "Температура көтерілгенде молекулалардың жылдамдығы қалай өзгереді?", a: ["Азаяды", "Өзгермейді", "Артады"], c: 2 },
+        { q: "Молекулалардың ретсіз қозғалысы қалай аталады?", a: ["Механикалық", "Жылулық", "Электрлік"], c: 1 },
+        { q: "Больцман тұрақтысы (k) нені байланыстырады?", a: ["Қысым мен Көлемді", "Энергия мен Температураны", "Масса мен Салмақты"], c: 1 },
+        { q: "-273°C-та молекулалар қозғала ма?", a: ["Иә", "Жоқ", "Жартылай"], c: 1 }
+    ];
+
+    let userAnswers = new Array(5).fill(null);
+
+    function loadQuiz() {
+        const quizBox = document.getElementById('quiz');
+        quizData.forEach((d, i) => {
+            const qDiv = document.createElement('div');
+            qDiv.className = 'question';
+            qDiv.innerHTML = `<p>${i+1}. ${d.q}</p>` + 
+                d.a.map((opt, idx) => `<button class="option-btn" onclick="selectOpt(${i}, ${idx}, this)">${opt}</button>`).join('');
+            quizBox.appendChild(qDiv);
+        });
+    }
+
+    window.selectOpt = (qIdx, optIdx, btn) => {
+        userAnswers[qIdx] = optIdx;
+        const parent = btn.parentElement;
+        parent.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+    };
+
+    window.checkQuiz = () => {
+        let score = 0;
+        userAnswers.forEach((ans, i) => {
+            if (ans === quizData[i].c) score++;
+        });
+        const resBox = document.getElementById('result-box');
+        resBox.style.display = "block";
+        resBox.innerHTML = `Нәтиже: 5-тен ${score} дұрыс!`;
+    };
+
+    init();
+    animate();
+    loadQuiz();
+</script>
+</body>
+</html>

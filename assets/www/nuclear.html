@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Nuclear Physics: Тізбекті Реакция</title>
+    <style>
+        body {
+            margin: 0; background-color: #050505; color: white;
+            font-family: 'Segoe UI', sans-serif; display: flex; 
+            flex-direction: column; overflow-x: hidden; overflow-y: auto;
+        }
+
+        .viewport { 
+            width: 100vw; height: 100vh; 
+            position: relative; flex-shrink: 0; 
+        }
+        
+        .sidebar {
+            width: 100%; background: #0a0a0a;
+            border-top: 2px solid #ff3333; padding: 25px;
+            box-sizing: border-box;
+        }
+
+        .controls {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(30, 30, 30, 0.85); padding: 12px; border-radius: 12px;
+            border: 1px solid #ff3333; z-index: 10; backdrop-filter: blur(5px);
+        }
+
+        h2 { color: #ff3333; text-transform: uppercase; font-size: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; }
+        h3 { color: #00ffff; margin-top: 25px; font-size: 18px; }
+        
+        .card { 
+            background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; 
+            margin-top: 15px; font-size: 14px; line-height: 1.6; border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .example-box { border-left: 4px solid #4ade80; padding-left: 15px; margin: 15px 0; }
+        
+        .quiz-opt { 
+            background: #1a1a1a; padding: 12px; margin: 8px 0; border-radius: 6px; 
+            cursor: pointer; border: 1px solid #444; font-size: 13px; transition: 0.2s; 
+        }
+        .quiz-opt:hover { border-color: #ff3333; background: #252525; }
+        .correct { background: #064e3b !important; border-color: #4ade80 !important; }
+        .wrong { background: #450a0a !important; border-color: #ff3333 !important; }
+
+        .restart-btn {
+            display: none; width: 100%; padding: 12px; margin-top: 20px;
+            background: #22c55e; color: white; border: none; border-radius: 6px;
+            font-weight: bold; cursor: pointer;
+        }
+
+        canvas { display: block; width: 100%; height: 100%; }
+        #flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; transition: opacity 0.05s; }
+        
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            background: #222; padding: 10px; border-radius: 5px; color: #ff3333;
+            display: inline-block; margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="flash"></div>
+
+<div class="viewport">
+    <div class="controls">
+        <h3 style="margin:0; color:#00ffff; font-size:14px;">COMMAND CENTER</h3>
+        <p style="font-size:11px; margin:5px 0;">Нейтронды жіберу үшін экранды басыңыз</p>
+        <button onclick="location.reload()" style="background:#ff3333; border:none; color:white; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold;">RESET SIM</button>
+    </div>
+    <canvas id="canvas"></canvas>
+</div>
+
+<div class="sidebar">
+    <h2>Ядролық Физика: Толық Шолу</h2>
+    
+    <div class="card">
+        <b>Ядролық бөліну (Fission)</b> — бұл ауыр атом ядросының нейтронмен соқтығысуы нәтижесінде екіге жарылуы. Бұл процесс кезінде ядроны біріктіріп тұрған <b>күшті әрекеттесу</b> энергиясы босап шығады.
+        <div class="formula"><sup>235</sup>U + n → <sup>92</sup>Kr + <sup>141</sup>Ba + 3n + Энергия</div>
+    </div>
+
+    <h3>Тізбекті реакцияның механизмі</h3>
+    
+
+[Image of nuclear fission chain reaction process]
+
+    <div class="card">
+        Бір ядро бөлінгенде шыққан 2-3 нейтрон көршілес атомдарға соғылады. Егер бұл процесс тоқтаусыз жалғасса, оны <b>тізбекті реакция</b> деп атаймыз. Оның жылдамдығын сипаттау үшін <i>көбею коэффициенті (k)</i> қолданылады:
+        <ul>
+            <li><b>k < 1:</b> Реакция сөнеді (субкритикалық).</li>
+            <li><b>k = 1:</b> Реакция тұрақты жүреді (критикалық — АЭС жұмысы).</li>
+            <li><b>k > 1:</b> Реакция қарқынды өседі (суперкритикалық — жарылыс).</li>
+        </ul>
+    </div>
+
+    <h3>Ядролық энергияның қолданылуы</h3>
+    
+    <div class="example-box">
+        <b>1. Бейбіт мақсат (Атом электр станциясы):</b>
+        <p style="font-size: 13px; color: #94a3b8;">Мұнда реакция <b>басқарылады</b>. Графит немесе су арқылы нейтрондар баяулатылады, ал кадмий стерженьдері артық нейтрондарды жұтып отырады. Нәтижесінде алынған жылу суды буға айналдырып, турбинаны қозғалтады.</p>
+    </div>
+
+    <div class="example-box">
+        <b>2. Әскери мақсат (Ядролық қару):</b>
+        <p style="font-size: 13px; color: #94a3b8;">Мұнда реакция <b>басқарылмайды</b>. Таза Уран-235 немесе Плутонийдің критикалық массасы жиналғанда, секундтың миллионнан бір бөлігінде миллиондаған градус жылу бөлініп, жарылыс болады.</p>
+    </div>
+
+    <h3>Қызықты деректер:</h3>
+    <div class="card" style="border-left: 4px solid #00ffff;">
+        • 1 кг Уран-235 бөлінгенде шығатын энергия 2500 тонна сапалы көмірді жаққанмен тең.<br>
+        • Табиғаттағы алғашқы ядролық реактор осыдан 2 миллиард жыл бұрын Габондағы Окло кенішінде өздігінен пайда болған.
+    </div>
+
+    <div id="quiz">
+        <h2>Білім Тексеру Тесті</h2>
+        <div id="quiz-content"></div>
+        <p id="result" style="text-align:center; font-weight:bold; color:#00ffff; margin-top: 15px; font-size: 18px;"></p>
+        <button id="restart-quiz" class="restart-btn" onclick="restartQuiz()">ТЕСТТІ ҚАЙТА БАСТАУ</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const flash = document.getElementById('flash');
+
+    let width, height;
+    const CONFIG = { atomR: 20, neutR: 5, neutSpeed: 8, rows: 9, cols: 6, shake: 0 };
+
+    class Atom {
+        constructor(x, y) {
+            this.x = x; this.y = y; this.active = true;
+            this.parts = Array.from({length: 10}, () => ({
+                dx: (Math.random()-0.5)*25, dy: (Math.random()-0.5)*25,
+                c: Math.random() > 0.5 ? "#ff3333" : "#3366ff", s: 3+Math.random()*3
+            }));
+        }
+        draw() {
+            if (!this.active) return;
+            ctx.save(); ctx.translate(this.x, this.y);
+            this.parts.forEach(p => { ctx.beginPath(); ctx.arc(p.dx, p.dy, p.s, 0, Math.PI*2); ctx.fillStyle = p.c; ctx.fill(); });
+            ctx.restore();
+        }
+    }
+
+    class Neutron {
+        constructor(x, y, vx, vy) { this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.alive = true; }
+        update() { 
+            this.x += this.vx; this.y += this.vy; 
+            if (this.x < -20 || this.x > width + 20 || this.y < -20 || this.y > height + 20) this.alive = false; 
+        }
+        draw() {
+            ctx.beginPath(); ctx.arc(this.x, this.y, CONFIG.neutR, 0, Math.PI*2);
+            ctx.fillStyle = "#00ffff"; ctx.shadowBlur = 12; ctx.shadowColor = "#00ffff"; ctx.fill(); ctx.shadowBlur = 0;
+        }
+    }
+
+    const atoms = []; const neutrons = []; let running = false;
+
+    function resize() {
+        width = window.innerWidth; height = window.innerHeight;
+        canvas.width = width; canvas.height = height;
+        if(!running) setup();
+    }
+    window.addEventListener('resize', resize);
+
+    function setup() {
+        atoms.length = 0; 
+        const padX = 40; const padY = 80;
+        const stepX = (width - 2*padX) / (CONFIG.cols-1);
+        const stepY = (height - 2*padY) / (CONFIG.rows-1);
+        for(let r=0; r<CONFIG.rows; r++) {
+            for(let c=0; c<CONFIG.cols; c++) {
+                atoms.push(new Atom(padX + c*stepX, padY + r*stepY));
+            }
+        }
+    }
+
+    function fission(a, n) {
+        a.active = false; CONFIG.shake = 6; flash.style.opacity = 0.7;
+        setTimeout(() => flash.style.opacity = 0, 80);
+        for(let i=0; i<3; i++) {
+            const ang = Math.random()*Math.PI*2;
+            neutrons.push(new Neutron(a.x, a.y, Math.cos(ang)*CONFIG.neutSpeed, Math.sin(ang)*CONFIG.neutSpeed));
+        }
+        n.alive = false;
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        if(running) return; running = true;
+        neutrons.push(new Neutron(20, height/2, CONFIG.neutSpeed, 0));
+    });
+
+    function animate() {
+        let sx = (Math.random()-0.5)*CONFIG.shake; let sy = (Math.random()-0.5)*CONFIG.shake;
+        if(CONFIG.shake > 0) CONFIG.shake *= 0.85;
+        ctx.save(); ctx.translate(sx, sy);
+        ctx.clearRect(-50, -50, width+100, height+100);
+        atoms.forEach(a => a.draw());
+        for(let i=neutrons.length-1; i>=0; i--) {
+            let n = neutrons[i]; n.update(); n.draw();
+            if(!n.alive) { neutrons.splice(i, 1); continue; }
+            for(let a of atoms) {
+                if(a.active && Math.hypot(n.x - a.x, n.y - a.y) < CONFIG.atomR + 5) {
+                    fission(a, n); break;
+                }
+            }
+        }
+        ctx.restore(); requestAnimationFrame(animate);
+    }
+
+    const qData = [
+        { q: "Ядролық бөліну кезінде қандай күштің энергиясы босап шығады?", a: ["Гравитация", "Күшті әрекеттесу", "Магниттік күш"], c: 1 },
+        { q: "АЭС-тегі тұрақты реакция үшін көбею коэффициенті (k) нешеге тең болуы керек?", a: ["k < 1", "k = 1", "k > 1"], c: 1 },
+        { q: "Артық нейтрондарды жұтып алатын стерженьдер неден жасалады?", a: ["Темір", "Кадмий немесе Бор", "Алтын"], c: 1 },
+        { q: "1 кг Уран-235 қанша көмірдің энергиясына тең?", a: ["2.5 тонна", "250 тонна", "2500 тонна"], c: 2 },
+        { q: "Тізбекті реакция тоқтамай жүруі үшін қажетті ең аз зат мөлшері?", a: ["Критикалық масса", "Инерциялық масса", "Атомдық салмақ"], c: 0 }
+    ];
+
+    let score = 0; let answeredQuestions = 0;
+    function loadQuiz() {
+        const cont = document.getElementById('quiz-content');
+        cont.innerHTML = ''; 
+        qData.forEach((d, i) => {
+            const div = document.createElement('div');
+            div.innerHTML = `<p style="font-size:14px; font-weight:bold; margin-top:15px;">${i+1}. ${d.q}</p>` + 
+                d.a.map((opt, idx) => `<div class="quiz-opt" onclick="check(${i}, ${idx}, this)">${opt}</div>`).join('');
+            cont.appendChild(div);
+        });
+    }
+
+    window.check = (qi, ai, el) => {
+        if(el.parentElement.style.pointerEvents === 'none') return;
+        if(ai === qData[qi].c) { el.classList.add('correct'); score++; }
+        else el.classList.add('wrong');
+        el.parentElement.style.pointerEvents = 'none';
+        answeredQuestions++;
+        if(answeredQuestions === qData.length) {
+            document.getElementById('result').innerText = `Нәтиже: 5-тен ${score} дұрыс!`;
+            document.getElementById('restart-quiz').style.display = 'block';
+        }
+    }
+
+    function restartQuiz() {
+        score = 0; answeredQuestions = 0;
+        document.getElementById('result').innerText = '';
+        document.getElementById('restart-quiz').style.display = 'none';
+        loadQuiz();
+    }
+
+    resize(); animate(); loadQuiz();
+</script>
+</body>
+</html>

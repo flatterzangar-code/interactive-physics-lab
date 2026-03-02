@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оптика: Линза Зертханасы</title>
+    <style>
+        /* БҮКІЛ БЕТКЕ СКРОЛЛ ОРНАТУ */
+        body {
+            margin: 0;
+            background-color: #0f172a;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column; /* Элементтер бірінің астына бірі түседі */
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        /* АНИМАЦИЯ АЙМАҒЫ (ЭКРАННЫҢ ТОЛЫҚ БИІКТІГІ) */
+        .visual-section {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            flex-shrink: 0; /* Жиырылып қалмауы үшін */
+        }
+
+        /* АҚПАРАТ ПАНЕЛІ (АНИМАЦИЯДАН КЕЙІН) */
+        .info-panel {
+            width: 100%;
+            background: rgba(30, 41, 59, 1);
+            border-top: 2px solid rgba(56, 189, 248, 0.5);
+            padding: 25px;
+            box-sizing: border-box;
+        }
+
+        .header-box {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h2 { color: #38bdf8; text-transform: uppercase; font-size: 18px; margin-top: 0; }
+        h3 { color: #818cf8; margin-top: 25px; font-size: 16px; border-left: 4px solid #38bdf8; padding-left: 10px; }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .formula {
+            display: block;
+            text-align: center;
+            font-size: 20px;
+            margin: 15px 0;
+            color: #fbbf24;
+            font-family: "Times New Roman", serif;
+            font-style: italic;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .quiz-option {
+            background: #1e293b;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid #334155;
+            font-size: 14px;
+        }
+        .correct { background: #064e3b !important; border-color: #22c55e !important; }
+        .wrong { background: #450a0a !important; border-color: #ef4444 !important; }
+
+        canvas { display: block; width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+
+<div class="visual-section">
+    <div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); text-align: center; z-index: 5; pointer-events: none; width: 90%;">
+        <h1 style="margin:0; font-size:20px; color:#38bdf8; text-shadow: 0 0 10px #38bdf8;">Жұқа Линзадағы Сәулелер</h1>
+    </div>
+    <canvas id="canvas"></canvas>
+</div>
+
+<div class="info-panel">
+    <div class="header-box">
+        <h2>Геометриялық Оптика</h2>
+        <p style="font-size: 12px; color: #94a3b8;">Линзада кескін алу теориясы</p>
+    </div>
+
+    
+
+[Image of light refraction in a convex lens]
+
+
+    <div class="card">
+        <b>Линза</b> — екі жағы сфералық беттермен шектелген мөлдір дене. Жинатақталған линза (convex) ортасы шетінен қалың болып келеді.
+    </div>
+
+    <h3>Жұқа линза формуласы</h3>
+    <div class="formula">1/F = 1/d + 1/f</div>
+    <p style="font-size: 13px;">Мұндағы: <b>F</b> — фокус арақашықтығы, <b>d</b> — заттан линзаға дейінгі қашықтық, <b>f</b> — линзадан кескінге дейінгі қашықтық.</p>
+
+    <h3>Кескін алу ережелері:</h3>
+    <div class="card">
+        1. <b>Параллель сәуле:</b> Оптикалық оське параллель түскен сәуле линзадан өткен соң фокустан (F) өтеді.<br><br>
+        2. <b>Центрлік сәуле:</b> Оптикалық центрден (O) өтетін сәуле бағытын өзгертпейді.<br><br>
+        3. <b>Фокустық сәуле:</b> Фокус арқылы өтіп түскен сәуле линзадан соң оське параллель кетеді.
+    </div>
+
+    <h3>Нақты мысалдар:</h3>
+    
+    <div class="card">
+        • <b>d = 2F (Анимациядағы жағдай):</b> Кескін 2F нүктесінде алынады, шын, төңкерілген және өлшемі заттың өлшеміне тең.<br><br>
+        • <b>d > 2F:</b> Кескін кішірейтілген болады (Фотоаппарат принципі).<br><br>
+        • <b>F < d < 2F:</b> Кескін үлкейтілген болады (Проектор принципі).
+    </div>
+
+    <div id="quiz">
+        <h3>Білімді тексеру (Тест)</h3>
+        <div id="quiz-container"></div>
+        <p id="quiz-result" style="text-align: center; font-weight: bold; margin-top: 15px; color: #38bdf8;"></p>
+        <button onclick="resetQuiz()" id="restart-btn" style="display:none; width:100%; padding:12px; background:#38bdf8; border:none; border-radius:8px; color:#0f172a; font-weight:bold; cursor:pointer;">Қайта тапсыру</button>
+    </div>
+</div>
+
+<script>
+    // АНИМАЦИЯ КОДЫ - МҮЛДЕМ ӨЗГЕРГЕН ЖОҚ
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height, cx, cy;
+    const focalLength = 120; // Телефон экранына сыюы үшін аздап кішірейтілді (логика сақталды)
+    const objX = -2 * focalLength; 
+    const objH = 80; 
+
+    let progress = 0;
+    const speed = 0.8;
+
+    function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        cx = width / 2;
+        cy = height / 2;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function toScreen(x, y) { return { x: cx + x, y: cy - y }; }
+
+    function drawArrow(x1, y1, x2, y2, color, lineWidth = 3, label = "") {
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        ctx.stroke();
+
+        const headlen = 10;
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - headlen * Math.cos(angle - Math.PI / 6), y2 - headlen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(x2 - headlen * Math.cos(angle + Math.PI / 6), y2 - headlen * Math.sin(angle + Math.PI / 6));
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        if (label) {
+            ctx.fillStyle = color;
+            ctx.font = "bold 12px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(label, x1, y1 + (y1 < y2 ? -15 : 25)); 
+        }
+    }
+
+    function drawStaticElements() {
+        ctx.beginPath();
+        ctx.moveTo(0, cy); ctx.lineTo(width, cy);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+        ctx.lineWidth = 1; ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(cx, 80); ctx.lineTo(cx, height - 80);
+        ctx.strokeStyle = "#38bdf8"; ctx.lineWidth = 2; ctx.stroke();
+        
+        ctx.beginPath(); ctx.moveTo(cx-10, 100); ctx.lineTo(cx, 80); ctx.lineTo(cx+10, 100); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx-10, height-100); ctx.lineTo(cx, height-80); ctx.lineTo(cx+10, height-100); ctx.stroke();
+
+        const points = [
+            {x: -focalLength, txt: "F"}, {x: -2*focalLength, txt: "2F"},
+            {x: focalLength, txt: "F"}, {x: 2*focalLength, txt: "2F"}
+        ];
+        points.forEach(p => {
+            const pos = toScreen(p.x, 0);
+            ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(pos.x, pos.y, 4, 0, Math.PI*2); ctx.fill();
+            ctx.fillText(p.txt, pos.x - 5, pos.y + 20);
+        });
+
+        const start = toScreen(objX, 0);
+        const end = toScreen(objX, objH);
+        drawArrow(start.x, start.y, end.x, end.y, "#ef4444", 4, "Зат");
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, width, height);
+        drawStaticElements();
+
+        const d = -objX;
+        const imgDist = (d * focalLength) / (d - focalLength);
+        const magnification = -imgDist / d;
+        const imgH = objH * magnification;
+
+        const pObjTop = toScreen(objX, objH);
+        const pImgTop = toScreen(imgDist, imgH);
+        const pLensTop = toScreen(0, objH);
+        const pLensCenter = toScreen(0, 0);
+        const pLensBot = toScreen(0, imgH);
+
+        ctx.lineWidth = 2;
+        function trace(pS, pE, tV) {
+            const curX = pS.x + (pE.x - pS.x) * tV;
+            const curY = pS.y + (pE.y - pS.y) * tV;
+            ctx.beginPath(); ctx.moveTo(pS.x, pS.y); ctx.lineTo(curX, curY); ctx.stroke();
+        }
+
+        if (progress <= 50) {
+            let t = progress / 50.0;
+            ctx.strokeStyle = "#60a5fa";
+            trace(pObjTop, pLensTop, t);
+            trace(pObjTop, pLensCenter, t);
+            trace(pObjTop, pLensBot, t);
+        } else {
+            ctx.strokeStyle = "#60a5fa";
+            ctx.beginPath(); ctx.moveTo(pObjTop.x, pObjTop.y); ctx.lineTo(pLensTop.x, pLensTop.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(pObjTop.x, pObjTop.y); ctx.lineTo(pLensCenter.x, pLensCenter.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(pObjTop.x, pObjTop.y); ctx.lineTo(pLensBot.x, pLensBot.y); ctx.stroke();
+
+            let t2 = Math.min(1, (progress - 50) / 50.0);
+            trace(pLensTop, pImgTop, t2);
+            trace(pLensCenter, pImgTop, t2);
+            trace(pLensBot, pImgTop, t2);
+        }
+
+        if (progress >= 100) {
+            const imgStart = toScreen(imgDist, 0);
+            drawArrow(imgStart.x, imgStart.y, pImgTop.x, pImgTop.y, "#22c55e", 4, "Кескін");
+            if (progress > 180) progress = 0; else progress += speed;
+        } else progress += speed;
+
+        requestAnimationFrame(animate);
+    }
+
+    // ТЕСТ ЛОГИКАСЫ - МҮЛДЕМ ӨЗГЕРГЕН ЖОҚ
+    const quizData = [
+        { q: "Зат 2F нүктесінде болса, кескін қай жерде болады?", a: ["F нүктесінде", "2F нүктесінде", "Линзаның центрінде"], c: 1 },
+        { q: "Оптикалық центр арқылы өтетін сәуле қалай өзгереді?", a: ["Сынады", "Кері қайтады", "Бағытын өзгертпейді"], c: 2 },
+        { q: "Линзаның оптикалық күші қандай бірлікпен өлшенеді?", a: ["Диоптрия (дптр)", "Метр (м)", "Ньютон (Н)"], c: 0 },
+        { q: "Жинатақталған линзаның шеті ортасына қарағанда қандай?", a: ["Қалың", "Жұқа", "Бірдей"], c: 1 },
+        { q: "Шын кескін әрқашан қандай болады?", a: ["Тура", "Төңкерілген", "Түссіз"], c: 1 }
+    ];
+
+    let userScore = 0;
+    function renderQuiz() {
+        const container = document.getElementById('quiz-container');
+        container.innerHTML = '';
+        quizData.forEach((item, i) => {
+            const qDiv = document.createElement('div');
+            qDiv.innerHTML = `<p style="font-size:14px; margin-top:15px;">${i+1}. ${item.q}</p>`;
+            item.a.forEach((opt, idx) => {
+                const optDiv = document.createElement('div');
+                optDiv.className = 'quiz-option';
+                optDiv.innerText = opt;
+                optDiv.onclick = function() {
+                    if(this.parentElement.dataset.answered) return;
+                    this.parentElement.dataset.answered = "true";
+                    if(idx === item.c) { this.classList.add('correct'); userScore++; }
+                    else this.classList.add('wrong');
+                    if(i === 4) finishQuiz();
+                };
+                qDiv.appendChild(optDiv);
+            });
+            container.appendChild(qDiv);
+        });
+    }
+
+    function finishQuiz() {
+        document.getElementById('quiz-result').innerText = `Нәтиже: 5-тен ${userScore} дұрыс!`;
+        document.getElementById('restart-btn').style.display = 'block';
+    }
+
+    function resetQuiz() {
+        userScore = 0;
+        document.getElementById('quiz-result').innerText = '';
+        document.getElementById('restart-btn').style.display = 'none';
+        renderQuiz();
+    }
+
+    animate();
+    renderQuiz();
+</script>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Magnetics Lab - Compact UI</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #020617;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        /* --- ЖОҒАРҒЫ ЖАҚ: СИМУЛЯЦИЯ --- */
+        .simulation-area {
+            width: 100%;
+            height: 450px;
+            position: relative;
+            background: #010409;
+            flex-shrink: 0;
+            border-bottom: 2px solid rgba(147, 51, 234, 0.3);
+        }
+
+        /* КІШІРЕЙТІЛГЕН БАСҚАРУ ПАНЕЛІ (Сол жақ жоғарыда) */
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(147, 51, 234, 0.3);
+            width: 180px; /* Ені кішірейтілді */
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        h2 { color: #d8b4fe; text-transform: uppercase; font-size: 10px; margin: 0 0 8px 0; letter-spacing: 0.5px; }
+        
+        .slider-wrap { margin-bottom: 8px; }
+        .slider-wrap:last-child { margin-bottom: 0; }
+        
+        .label-row { display: flex; justify-content: space-between; font-size: 9px; margin-bottom: 3px; color: #94a3b8; }
+        .val-text { color: #c084fc; font-weight: bold; }
+
+        input[type=range] { 
+            width: 100%; 
+            height: 4px; 
+            accent-color: #c084fc; 
+            cursor: pointer; 
+            display: block;
+            margin: 0;
+        }
+
+        /* --- ТӨМЕНГІ ЖАҚ: МАЗМҰН --- */
+        .info-panel {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.95);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .formula {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-style: italic;
+            color: #fbbf24;
+            margin: 15px 0;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            font-size: 18px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .quiz-option {
+            background: #1e293b;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid #334155;
+            font-size: 13px;
+        }
+        .correct { background: #064e3b !important; border-color: #22c55e !important; }
+        .wrong { background: #450a0a !important; border-color: #ef4444 !important; }
+
+        canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+    </style>
+</head>
+<body>
+
+<div class="simulation-area">
+    <div class="controls">
+        <h2>БАПТАУ</h2>
+        <div class="slider-wrap">
+            <div class="label-row"><span>БҰРЫШ</span> <span id="angleText" class="val-text">0°</span></div>
+            <input type="range" id="angleSlider" min="0" max="360" value="0">
+        </div>
+        <div class="slider-wrap">
+            <div class="label-row"><span>АҒЫН</span> <span id="flowText" class="val-text" style="color:#38bdf8">50%</span></div>
+            <input type="range" id="flowSlider" min="0" max="100" value="50">
+        </div>
+    </div>
+    <canvas id="canvas"></canvas>
+</div>
+
+<div class="info-panel">
+    <h2>Магнетизм теориясы</h2>
+    <div class="card">
+        <b>Магнит өрісі</b> — бұл қозғалыстағы электр зарядтарына немесе магниттік моменті бар денелерге әсер ететін материяның ерекше түрі.
+    </div>
+
+    <div class="formula">Φ = B · S · cos(α)</div>
+
+    <div class="card">
+        1. <b>Полюстер:</b> N (Солтүстік), S (Оңтүстік). Аттас полюстер тебіледі.<br>
+        2. <b>Тұйықтық:</b> Магнит өрісі сызықтары әрқашан тұйық.
+    </div>
+
+    <div id="quiz">
+        <h3>Білімді тексеру</h3>
+        <div id="quiz-container"></div>
+        <p id="quiz-res" style="text-align:center; font-weight:bold; color:#c084fc; margin-top:20px;"></p>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    const magnet = { x: 0, y: 0, w: 160, h: 45, angle: 0, strength: 22000 };
+    const compass = { x: 0, y: 0, r: 35, dragging: false, angle: 0 };
+    const particles = [];
+    let flowRate = 0.5;
+
+    function resize() {
+        width = canvas.parentElement.clientWidth;
+        height = canvas.parentElement.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+        magnet.x = width / 2;
+        magnet.y = height / 2;
+        if(!compass.dragging) {
+            compass.x = width / 2;
+            compass.y = height / 2 - 130;
+        }
+    }
+    window.addEventListener('resize', resize);
+
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    canvas.onmousedown = (e) => {
+        const pos = getPos(e);
+        if (Math.hypot(pos.x - compass.x, pos.y - compass.y) < compass.r + 10) compass.dragging = true;
+    };
+    canvas.ontouchstart = (e) => {
+        const pos = getPos(e);
+        if (Math.hypot(pos.x - compass.x, pos.y - compass.y) < compass.r + 10) {
+            compass.dragging = true;
+            e.preventDefault();
+        }
+    };
+
+    window.onmousemove = (e) => {
+        if (compass.dragging) { const pos = getPos(e); compass.x = pos.x; compass.y = pos.y; }
+    };
+    window.ontouchmove = (e) => {
+        if (compass.dragging) {
+            const pos = getPos(e);
+            compass.x = pos.x; compass.y = pos.y;
+            e.preventDefault();
+        }
+    };
+    window.onmouseup = window.ontouchend = () => compass.dragging = false;
+
+    function getField(x, y) {
+        let half = magnet.w * 0.4;
+        let nx = magnet.x + Math.cos(magnet.angle) * half, ny = magnet.y + Math.sin(magnet.angle) * half;
+        let sx = magnet.x - Math.cos(magnet.angle) * half, sy = magnet.y - Math.sin(magnet.angle) * half;
+        let dxn = x - nx, dyn = y - ny, dn = Math.hypot(dxn, dyn);
+        let dxs = x - sx, dys = y - sy, ds = Math.hypot(dxs, dys);
+        let fn = magnet.strength / (dn * dn + 100), fs = magnet.strength / (ds * ds + 100);
+        return { x: (dxn/dn)*fn - (dxs/ds)*fs, y: (dyn/dn)*fn - (dys/ds)*fs };
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, width, height);
+        
+        magnet.angle = document.getElementById('angleSlider').value * Math.PI / 180;
+        document.getElementById('angleText').innerText = document.getElementById('angleSlider').value + "°";
+        flowRate = document.getElementById('flowSlider').value / 100;
+        document.getElementById('flowText').innerText = document.getElementById('flowSlider').value + "%";
+
+        ctx.strokeStyle = "rgba(255,255,255,0.08)";
+        for(let i=20; i<width; i+=40) {
+            for(let j=20; j<height; j+=40) {
+                let f = getField(i, j);
+                let a = Math.atan2(f.y, f.x);
+                ctx.save(); ctx.translate(i, j); ctx.rotate(a);
+                ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.lineTo(2, -2); ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        if(Math.random() < flowRate) {
+            let h = magnet.w * 0.45;
+            particles.push({
+                x: magnet.x + Math.cos(magnet.angle)*h + (Math.random()-0.5)*20,
+                y: magnet.y + Math.sin(magnet.angle)*h + (Math.random()-0.5)*20,
+                l: 1.0
+            });
+        }
+        for(let i=particles.length-1; i>=0; i--) {
+            let p = particles[i];
+            let f = getField(p.x, p.y);
+            let m = Math.hypot(f.x, f.y);
+            p.x += (f.x/m)*5; p.y += (f.y/m)*5; p.l -= 0.006;
+            if(p.l <= 0 || Math.hypot(p.x-magnet.x, p.y-magnet.y) < 20) particles.splice(i, 1);
+            ctx.fillStyle = `rgba(100, 200, 255, ${p.l*0.5})`;
+            ctx.beginPath(); ctx.arc(p.x, p.y, 1.5, 0, Math.PI*2); ctx.fill();
+        }
+
+        ctx.save(); ctx.translate(magnet.x, magnet.y); ctx.rotate(magnet.angle);
+        ctx.fillStyle = "#1e40af"; ctx.fillRect(-magnet.w/2, -magnet.h/2, magnet.w/2, magnet.h);
+        ctx.fillStyle = "#b91c1c"; ctx.fillRect(0, -magnet.h/2, magnet.w/2, magnet.h);
+        ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.strokeRect(-magnet.w/2, -magnet.h/2, magnet.w, magnet.h);
+        ctx.fillStyle = "white"; ctx.font = "bold 18px Arial"; ctx.textAlign="center";
+        ctx.fillText("S", -magnet.w/4, 7); ctx.fillText("N", magnet.w/4, 7);
+        ctx.restore();
+
+        let cv = getField(compass.x, compass.y);
+        let ta = Math.atan2(cv.y, cv.x);
+        let diff = ta - compass.angle;
+        while(diff > Math.PI) diff -= Math.PI*2; while(diff < -Math.PI) diff += Math.PI*2;
+        compass.angle += diff * 0.15;
+        
+        ctx.save(); ctx.translate(compass.x, compass.y);
+        ctx.beginPath(); ctx.arc(0, 0, compass.r, 0, Math.PI*2); ctx.fillStyle="#1e293b"; ctx.fill();
+        ctx.strokeStyle="#fbbf24"; ctx.lineWidth=3; ctx.stroke();
+        ctx.rotate(compass.angle);
+        ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(compass.r-10, 0); ctx.lineTo(0, 5); ctx.fillStyle="#ef4444"; ctx.fill();
+        ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(-(compass.r-10), 0); ctx.lineTo(0, 5); ctx.fillStyle="#cbd5e1"; ctx.fill();
+        ctx.restore();
+
+        requestAnimationFrame(draw);
+    }
+
+    const quizData = [
+        { q: "Магнит өрісі индукциясы қай полюстен шығады?", a: ["N (Солтүстік)", "S (Оңтүстік)", "Ортасынан"], c: 0 },
+        { q: "Магниттік индукцияның өлшем бірлігі?", a: ["Вольт", "Ньютон", "Тесла"], c: 2 },
+        { q: "Аттас полюстер бір-бірімен қалай әрекеттеседі?", a: ["Тартылады", "Тебіледі", "Әсерлеспейді"], c: 1 },
+        { q: "Магнит өрісі сызықтарының басты қасиеті?", a: ["Олар үзілмелі", "Олар әрқашан тұйық", "Олар түзу сызық"], c: 1 },
+        { q: "Компастың қызыл тілшесі қайда бағытталады?", a: ["Оңтүстікке", "Магнит өрісімен", "Тігінен"], c: 1 }
+    ];
+
+    function loadQuiz() {
+        const container = document.getElementById('quiz-container');
+        quizData.forEach((d, i) => {
+            const div = document.createElement('div');
+            div.innerHTML = `<p style="font-size:13px; margin-top:15px;">${i+1}. ${d.q}</p>` + 
+                d.a.map((opt, idx) => `<div class="quiz-option" onclick="checkAns(${i}, ${idx}, this)">${opt}</div>`).join('');
+            container.appendChild(div);
+        });
+    }
+
+    let score = 0;
+    window.checkAns = (qi, ai, el) => {
+        if(el.parentElement.style.pointerEvents === 'none') return;
+        if(ai === quizData[qi].c) { el.classList.add('correct'); score++; }
+        else { el.classList.add('wrong'); }
+        el.parentElement.style.pointerEvents = 'none';
+        if(qi === 4) document.getElementById('quiz-res').innerText = `Нәтиже: 5-тен ${score} дұрыс!`;
+    }
+
+    resize(); draw(); loadQuiz();
+</script>
+</body>
+</html>

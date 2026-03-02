@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Physics Lab 4D - Mobile</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #020617;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column; /* Вертикальды орналасу */
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        #bg-grid {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+        }
+
+        /* Симуляция экраны жоғарыда */
+        .simulation-container {
+            width: 100%;
+            height: 350px; /* Телефонға ыңғайлы биіктік */
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #020617;
+            border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        /* Төменгі контент бөлімі */
+        .content-wrapper {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .controls {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(15px);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .theory-panel {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 20px;
+            border-radius: 20px;
+        }
+
+        h2 { color: #38bdf8; text-transform: uppercase; font-size: 14px; letter-spacing: 2px; text-align: center; margin-top: 0; }
+
+        .power-btn {
+            width: 100%; padding: 15px; border-radius: 50px; border: none;
+            font-weight: bold; cursor: pointer; transition: 0.4s;
+            background: #ef4444; color: white; margin-bottom: 20px;
+        }
+        .power-btn.on { background: #22c55e; box-shadow: 0 0 25px #22c55e; }
+
+        input[type=range] { width: 100%; accent-color: #38bdf8; cursor: pointer; }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(56, 189, 248, 0.1);
+            padding: 15px; border-radius: 15px; margin-bottom: 15px;
+        }
+
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        .option-btn {
+            width: 100%; padding: 12px; margin: 5px 0; background: #0f172a;
+            border: 1px solid #334155; color: #94a3b8; border-radius: 8px; cursor: pointer; text-align: left;
+        }
+        .option-btn.selected { border-color: #38bdf8; color: white; background: #1e293b; }
+    </style>
+</head>
+<body>
+
+<div id="bg-grid"></div>
+
+<div class="simulation-container">
+    <canvas id="canvas"></canvas>
+</div>
+
+<div class="content-wrapper">
+    <div class="controls">
+        <h2>System Control</h2>
+        <button id="mainSwitch" class="power-btn" onclick="toggleSwitch()">OFF (POWER DISCONNECTED)</button>
+        
+        <div style="margin-bottom: 15px;">
+            <div style="display:flex; justify-content:space-between; font-size:12px;">
+                <span>VOLTAGE (U)</span> <span id="voltText" style="color:#38bdf8">12 V</span>
+            </div>
+            <input type="range" id="voltSlider" min="0" max="40" value="12" step="1">
+        </div>
+
+        <div>
+            <div style="display:flex; justify-content:space-between; font-size:12px;">
+                <span>RESISTANCE (R)</span> <span id="resText" style="color:#fbbf24">10 Ω</span>
+            </div>
+            <input type="range" id="resSlider" min="1" max="100" value="10" step="1">
+        </div>
+    </div>
+
+    <div class="theory-panel">
+        <h2>Сенсорлық панель</h2>
+        <div class="info-card">
+            <p><b>Ом заңы:</b> Тізбектегі ток күші кернеуге тура пропорционал және кедергіге кері пропорционал.</p>
+            <p style="text-align:center; font-size: 24px; color: #38bdf8;">I = U / R</p>
+        </div>
+
+        <h3>Физикалық эффектілер:</h3>
+        <ul style="font-size: 13px; color: #94a3b8; padding-left: 20px;">
+            <li><b>Жылу бөліну:</b> Кедергі артқанда сымдар қызады (Джоуль-Ленц заңы).</li>
+            <li><b>Электронды ағын:</b> Кернеу — электрондарды итеретін күш.</li>
+        </ul>
+
+        <div id="quiz-box">
+            <h3>Лабораториялық Тест</h3>
+            <div id="quiz-content"></div>
+            <button onclick="checkQuiz()" style="width:100%; padding:15px; background:#38bdf8; border:none; border-radius:10px; cursor:pointer; font-weight:bold; margin-top:10px;">Нәтижені тексеру</button>
+            <p id="quiz-result" style="text-align:center; font-weight:bold; color:#22c55e; margin-top:15px;"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const grid = document.getElementById('bg-grid');
+    let width, height, cx, cy;
+    let rectW = 280, rectH = 150; // Мобильді экранға лайықталған өлшем
+
+    function resize() {
+        width = canvas.parentElement.clientWidth;
+        height = canvas.parentElement.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+        cx = width / 2;
+        cy = height / 2;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let voltage = 12, resistance = 10, current = 0, isCircuitOn = false;
+    const electrons = [];
+    for(let i=0; i<60; i++) electrons.push({ dist: i * 25, offset: Math.random() * 6 - 3 });
+
+    function toggleSwitch() {
+        isCircuitOn = !isCircuitOn;
+        const btn = document.getElementById('mainSwitch');
+        btn.innerText = isCircuitOn ? "ON (POWER CONNECTED)" : "OFF (POWER DISCONNECTED)";
+        btn.className = isCircuitOn ? "power-btn on" : "power-btn";
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, width, height);
+        voltage = parseFloat(document.getElementById('voltSlider').value);
+        resistance = parseFloat(document.getElementById('resSlider').value);
+        current = isCircuitOn ? (voltage / resistance) : 0;
+
+        document.getElementById('voltText').innerText = voltage + " V";
+        document.getElementById('resText').innerText = resistance + " Ω";
+
+        grid.style.backgroundPosition = `0px ${Date.now() * current * 0.01}px`;
+
+        const heatColor = Math.min(255, (resistance / 100) * 200);
+        ctx.strokeStyle = isCircuitOn ? `rgb(${100 + heatColor}, 100, 255)` : "#1e293b";
+        ctx.lineWidth = 6;
+        ctx.lineJoin = "round";
+        ctx.shadowBlur = isCircuitOn ? current * 10 : 0;
+        ctx.shadowColor = "#38bdf8";
+        ctx.strokeRect(cx - rectW/2, cy - rectH/2, rectW, rectH);
+        ctx.shadowBlur = 0;
+
+        electrons.forEach(e => {
+            if(isCircuitOn) e.dist += current * 8;
+            let d = e.dist % ((rectW + rectH) * 2);
+            let p = {};
+            
+            if(d < rectW) p = {x: cx - rectW/2 + d, y: cy + rectH/2};
+            else if(d < rectW + rectH) p = {x: cx + rectW/2, y: cy + rectH/2 - (d - rectW)};
+            else if(d < rectW*2 + rectH) p = {x: cx + rectW/2 - (d - (rectW + rectH)), y: cy - rectH/2};
+            else p = {x: cx - rectW/2, y: cy - rectH/2 + (d - (rectW*2 + rectH))};
+
+            ctx.beginPath();
+            const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 5);
+            grad.addColorStop(0, "#fff");
+            grad.addColorStop(1, "rgba(56, 189, 248, 0)");
+            ctx.fillStyle = grad;
+            ctx.arc(p.x, p.y, 6, 0, Math.PI*2);
+            ctx.fill();
+        });
+
+        drawHUD(cx - rectW/2, cy + 40, "U", voltage.toFixed(1) + " V", "#38bdf8");
+        drawHUD(cx + rectW/2, cy + 40, "I", current.toFixed(2) + " A", "#22c55e");
+
+        const bulbX = cx + rectW/2, bulbY = cy;
+        ctx.beginPath();
+        ctx.arc(bulbX, bulbY, 20, 0, Math.PI*2);
+        if(current > 0) {
+            ctx.shadowBlur = current * 30;
+            ctx.shadowColor = "#fbbf24";
+            ctx.fillStyle = `rgba(251, 191, 36, ${0.3 + current})`;
+        } else {
+            ctx.fillStyle = "#0f172a";
+        }
+        ctx.fill();
+        ctx.strokeStyle = "#94a3b8";
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        requestAnimationFrame(draw);
+    }
+
+    function drawHUD(x, y, label, val, color) {
+        ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
+        ctx.fillRect(x - 30, y, 60, 35);
+        ctx.strokeStyle = color;
+        ctx.strokeRect(x - 30, y, 60, 35);
+        ctx.fillStyle = color;
+        ctx.font = "9px monospace";
+        ctx.fillText(label, x - 25, y + 12);
+        ctx.font = "bold 11px monospace";
+        ctx.fillText(val, x - 25, y + 28);
+    }
+
+    const questions = [
+        {q: "Кедергі 2 есе артса, ток күші қалай өзгереді?", a: ["2 есе артады", "2 есе азаяды", "Өзгермейді"], c: 1},
+        {q: "Ток күшінің формуласы қандай?", a: ["I = U/R", "I = U*R", "I = R/U"], c: 0},
+        {q: "Кернеу 0-ге тең болса, ток жүре ме?", a: ["Иә", "Жоқ", "Кедергіге байланысты"], c: 1},
+        {q: "Сымдардың қызуы қай заңмен түсіндіріледі?", a: ["Ом заңы", "Джоуль-Ленц заңы", "Ньютон заңы"], c: 1},
+        {q: "Кедергінің бірлігі?", a: ["Ампер", "Вольт", "Ом"], c: 2}
+    ];
+
+    let userAnswers = [];
+    function renderQuiz() {
+        const container = document.getElementById('quiz-content');
+        questions.forEach((q, i) => {
+            const div = document.createElement('div');
+            div.innerHTML = `<p style='font-size:13px; margin: 15px 0 5px;'>${i+1}. ${q.q}</p>` + 
+                q.a.map((opt, j) => `<button class="option-btn" onclick="selectOpt(${i},${j},this)">${opt}</button>`).join('');
+            container.appendChild(div);
+        });
+    }
+
+    window.selectOpt = (qi, ai, btn) => {
+        userAnswers[qi] = ai;
+        const btns = btn.parentElement.querySelectorAll('.option-btn');
+        btns.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+    };
+
+    window.checkQuiz = () => {
+        let score = 0;
+        questions.forEach((q, i) => { if(userAnswers[i] === q.c) score++; });
+        document.getElementById('quiz-result').innerText = `Нәтиже: 5-тен ${score} дұрыс!`;
+    };
+
+    renderQuiz();
+    draw();
+</script>
+</body>
+</html>

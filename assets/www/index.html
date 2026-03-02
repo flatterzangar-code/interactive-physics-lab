@@ -1,0 +1,1002 @@
+<!doctype html>
+<html lang="kk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ultra Calculator (Math + Physics)</title>
+  <style>
+    :root{
+      --bg:#0b1020; --panel:#111a33; --panel2:#0f1730;
+      --text:#e9eeff; --muted:#9fb0ff;
+      --btn:#1a2550; --btn2:#23306a; --accent:#7aa2ff; --danger:#ff6b6b;
+      --ok:#39d98a;
+    }
+    *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    body{margin:0;background:linear-gradient(120deg,#080b16,#0b1020,#071028);color:var(--text)}
+    .wrap{max-width:1100px;margin:20px auto;padding:16px}
+    .header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .title{font-weight:800;font-size:20px;letter-spacing:.3px}
+    .pill{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13px}
+    .pill span{padding:6px 10px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(255,255,255,.04)}
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+    .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:16px;overflow:hidden}
+    .card .top{padding:12px 14px;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.08)}
+    .card .top .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{
+      cursor:pointer; user-select:none;
+      padding:8px 12px;border-radius:999px;
+      background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);
+      color:var(--muted);font-weight:650;font-size:13px
+    }
+    .tab.active{background:rgba(122,162,255,.18);border-color:rgba(122,162,255,.40);color:var(--text)}
+    .content{padding:14px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .col{flex:1 1 220px}
+    .label{font-size:12px;color:var(--muted);margin-bottom:6px}
+    input, select, textarea{
+      width:100%;padding:10px 12px;border-radius:12px;
+      background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.10);
+      color:var(--text);outline:none
+    }
+    textarea{min-height:120px;resize:vertical}
+    .display{
+      padding:12px;border-radius:14px;background:rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.12)
+    }
+    .expr{font-size:16px;word-break:break-all}
+    .res{margin-top:6px;font-size:22px;font-weight:800;color:var(--accent);word-break:break-all}
+    .mini{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.35}
+    /* === Keypad layout safe === */
+.kbd{
+  display:grid;
+  grid-template-columns:repeat(6, minmax(0, 1fr));
+  gap:10px;
+  margin-top:12px;
+}
+
+/* === Premium buttons === */
+button{
+  cursor:pointer;
+  width:100%;
+  min-width:0;
+
+  border-radius:14px;
+  padding:12px 10px;
+
+  background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+  border:1px solid rgba(255,255,255,.14);
+
+  color:var(--text);
+  font-weight:800;
+  font-size:16px;
+  letter-spacing:.2px;
+
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.35),
+    inset 0 1px 0 rgba(255,255,255,.10);
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  transition: transform .08s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+}
+
+button:hover{
+  background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.06));
+  border-color: rgba(255,255,255,.20);
+}
+
+button:active{
+  transform: translateY(1px) scale(.985);
+  box-shadow:
+    0 6px 14px rgba(0,0,0,.28),
+    inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+button:focus{
+  outline:none;
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.35),
+    0 0 0 3px rgba(122,162,255,.22),
+    inset 0 1px 0 rgba(255,255,255,.10);
+}
+
+/* Operator buttons */
+.op{
+  background:linear-gradient(180deg, rgba(122,162,255,.28), rgba(122,162,255,.10));
+  border-color: rgba(122,162,255,.45);
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.35),
+    0 0 18px rgba(122,162,255,.18),
+    inset 0 1px 0 rgba(255,255,255,.10);
+}
+.op:hover{ border-color: rgba(122,162,255,.65); }
+
+/* Danger buttons (AC/DEL) */
+.danger{
+  background:linear-gradient(180deg, rgba(255,107,107,.26), rgba(255,107,107,.10));
+  border-color: rgba(255,107,107,.45);
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.35),
+    0 0 18px rgba(255,107,107,.14),
+    inset 0 1px 0 rgba(255,255,255,.10);
+}
+.danger:hover{ border-color: rgba(255,107,107,.65); }
+
+/* OK button (=) */
+.ok{
+  background:linear-gradient(180deg, rgba(57,217,138,.26), rgba(57,217,138,.10));
+  border-color: rgba(57,217,138,.45);
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.35),
+    0 0 18px rgba(57,217,138,.16),
+    inset 0 1px 0 rgba(255,255,255,.10);
+}
+.ok:hover{ border-color: rgba(57,217,138,.65); }
+
+/* Wide button (0) */
+.wide{ grid-column: span 2; }
+
+/* Phone portrait: compact but same layout */
+@media (orientation: portrait){
+  .kbd{ gap:8px; }
+  button{ padding:11px 8px; font-size:15px; border-radius:13px; }
+}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="title">Ultra Calculator — Math + Physics (offline)</div>
+    <div class="pill">
+      <span id="modePill">Mode: DEG</span>
+      <span>π, e, G, k, c, h…</span>
+      <span class="badge">HTML+JS</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: Calculator -->
+    <div class="card">
+      <div class="top">
+        <div class="tabs">
+          <div class="tab active" data-tab="calc">Калькулятор</div>
+          <div class="tab" data-tab="help">Қолдану / Функциялар</div>
+        </div>
+      </div>
+
+      <div class="content" id="tab-calc">
+        <div class="display">
+          <div class="expr" id="exprView">0</div>
+          <div class="res" id="resView">0</div>
+          <div class="mini">
+            <b>Мүмкіндіктер:</b> sin/cos/tan, asin/acos/atan, log, ln, √, xʸ, |x|, !, %, π, e,
+            жақшалар (), дәрежелер ^, ғылыми жазу (1e-3), константалар, жады (MC/MR/M+/M-), тарих.
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <div class="col">
+            <div class="label">Expression</div>
+            <input id="exprInput" placeholder="Мысалы: 2*sin(30)+sqrt(9)+3^2" />
+          </div>
+          <div class="col" style="max-width:220px">
+            <div class="label">Angle</div>
+            <select id="angleMode">
+              <option value="DEG">DEG (градус)</option>
+              <option value="RAD">RAD (радиан)</option>
+            </select>
+          </div>
+          <div class="col" style="max-width:220px">
+            <div class="label">Round</div>
+            <select id="roundMode">
+              <option value="none">No rounding</option>
+              <option value="6">6 digits</option>
+              <option value="10">10 digits</option>
+              <option value="14" selected>14 digits</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="kbd" aria-label="calculator keypad">
+          <button class="danger" data-act="AC">AC</button>
+          <button class="danger" data-act="DEL">DEL</button>
+          <button data-insert="(">(</button>
+          <button data-insert=")">)</button>
+          <button class="op" data-insert="%">%</button>
+          <button class="op" data-insert="/">÷</button>
+
+          <button data-insert="7">7</button>
+          <button data-insert="8">8</button>
+          <button data-insert="9">9</button>
+          <button class="op" data-insert="*">×</button>
+          <button data-insert="pi">π</button>
+          <button data-insert="e">e</button>
+
+          <button data-insert="4">4</button>
+          <button data-insert="5">5</button>
+          <button data-insert="6">6</button>
+          <button class="op" data-insert="-">−</button>
+          <button data-insert="^">xʸ</button>
+          <button data-act="fact">x!</button>
+
+          <button data-insert="1">1</button>
+          <button data-insert="2">2</button>
+          <button data-insert="3">3</button>
+          <button class="op" data-insert="+">+</button>
+          <button data-act="ans">ANS</button>
+          <button class="ok" data-act="=">=</button>
+
+          <button class="wide" data-insert="0">0</button>
+          <button data-insert=".">.</button>
+          <button data-insert="1e">EXP</button>
+          <button data-act="neg">±</button>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="row">
+          <div class="col">
+            <div class="label">Функциялар (бір батырмамен қосылады)</div>
+            <div class="row">
+              <button data-fn="sin(">sin</button>
+              <button data-fn="cos(">cos</button>
+              <button data-fn="tan(">tan</button>
+              <button data-fn="asin(">asin</button>
+              <button data-fn="acos(">acos</button>
+              <button data-fn="atan(">atan</button>
+              <button data-fn="log(">log10</button>
+              <button data-fn="ln(">ln</button>
+              <button data-fn="sqrt(">√</button>
+              <button data-fn="abs(">abs</button>
+              <button data-fn="floor(">floor</button>
+              <button data-fn="ceil(">ceil</button>
+              <button data-fn="round(">round</button>
+              <button data-fn="min(">min</button>
+              <button data-fn="max(">max</button>
+              <button data-fn="nCr(">nCr</button>
+              <button data-fn="nPr(">nPr</button>
+            </div>
+            <div class="hint">
+              Мысалдар: <span class="muted">nCr(10,3)</span>, <span class="muted">log(1000)</span>,
+              <span class="muted">ln(e^2)</span>, <span class="muted">sqrt(2)</span>.
+            </div>
+          </div>
+
+          <div class="col" style="min-width:260px">
+            <div class="label">Жады (Memory)</div>
+            <div class="row">
+              <button data-mem="MC">MC</button>
+              <button data-mem="MR">MR</button>
+              <button data-mem="M+">M+</button>
+              <button data-mem="M-">M-</button>
+              <button data-mem="MS">MS</button>
+            </div>
+            <div class="hint">Memory = <b id="memView">0</b></div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="label">Тарих (History)</div>
+        <div class="history" id="history"></div>
+      </div>
+
+      <div class="content" id="tab-help" style="display:none">
+        <div class="label">Қолдайтын синтаксис</div>
+        <div class="hint">
+          <div><b>Операторлар:</b> + - * / % ^ (дәрежелеу)</div>
+          <div><b>Жақша:</b> ( )</div>
+          <div><b>Константа:</b> pi, e, c, G, k, h, g0, R, NA</div>
+          <div><b>Функция:</b> sin(x), cos(x), tan(x), asin(x), acos(x), atan(x)</div>
+          <div><b>Лог:</b> log(x)=log10, ln(x)=натурал лог</div>
+          <div><b>Дөңгелектеу:</b> floor(x), ceil(x), round(x)</div>
+          <div><b>Басқа:</b> sqrt(x), abs(x), min(a,b,...), max(a,b,...)</div>
+          <div><b>Комбинаторика:</b> nCr(n,r), nPr(n,r), fact(n) немесе x! батырмасы</div>
+          <div class="sep"></div>
+          <div><b>Назар:</b> DEG режимінде sin(30)=0.5. RAD режимінде sin(pi/6)=0.5.</div>
+          <div><b>EXP:</b> 1e-3 (0.001), 6.02e23 т.б.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Formula solver -->
+    <div class="card">
+      <div class="top">
+        <div class="tabs">
+          <div class="tab active" data-tab="solver">Формулалар (Solver)</div>
+          <div class="tab" data-tab="constants">Константалар</div>
+        </div>
+      </div>
+
+      <div class="content" id="tab-solver">
+        <div class="row">
+          <div class="col">
+            <div class="label">Формула</div>
+            <select id="formulaSelect"></select>
+          </div>
+          <div class="col">
+            <div class="label">Нені табамыз (solve for)</div>
+            <select id="solveFor"></select>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div id="varsArea"></div>
+
+        <div class="row" style="margin-top:10px">
+          <button class="ok" id="solveBtn">Есептеу</button>
+          <button class="danger" id="clearVars">Тазалау</button>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="display">
+          <div class="expr muted" id="formulaText">—</div>
+          <div class="res" id="solverOut">Нәтиже: —</div>
+          <div class="mini" id="solverNote"></div>
+        </div>
+
+        <div class="hint">
+          Кез келген мәнге <b>pi</b>, <b>e</b>, <b>sqrt(2)</b> сияқты өрнек жазуға болады.
+          Мысалы: <span class="muted">m = 2</span>, <span class="muted">v = 10</span> → Ek = 100 J.
+        </div>
+      </div>
+
+      <div class="content" id="tab-constants" style="display:none">
+        <div class="label">Built-in константалар</div>
+        <div class="hint" id="constantsList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ====== Constants ======
+  const CONST = {
+    pi: Math.PI,
+    e: Math.E,
+    c: 299792458,                  // m/s
+    G: 6.67430e-11,                 // N m^2 / kg^2
+    k: 8.9875517923e9,              // N m^2 / C^2 (1/(4πϵ0))
+    h: 6.62607015e-34,              // J s
+    g0: 9.80665,                    // m/s^2
+    R: 8.314462618,                 // J/(mol*K)
+    NA: 6.02214076e23               // 1/mol
+  };
+
+  // ====== Helpers: factorial, nCr, nPr ======
+  function fact(n){
+    n = Math.floor(n);
+    if (!isFinite(n)) return NaN;
+    if (n < 0) return NaN;
+    if (n > 170) return Infinity; // JS number overflow
+    let r = 1;
+    for (let i=2;i<=n;i++) r *= i;
+    return r;
+  }
+  function nCr(n,r){
+    n = Math.floor(n); r = Math.floor(r);
+    if (r<0 || n<0 || r>n) return NaN;
+    return fact(n) / (fact(r)*fact(n-r));
+  }
+  function nPr(n,r){
+    n = Math.floor(n); r = Math.floor(r);
+    if (r<0 || n<0 || r>n) return NaN;
+    return fact(n) / fact(n-r);
+  }
+
+  // ====== Expression evaluator (safe-ish) ======
+  let ANGLE = "DEG";
+  let ANS = 0;
+  let MEM = 0;
+
+  function toRad(x){ return x * Math.PI / 180; }
+  function fromRad(x){ return x * 180 / Math.PI; }
+
+  // Degree-aware trig wrappers
+  const trig = {
+    sin: (x)=> Math.sin(ANGLE==="DEG" ? toRad(x) : x),
+    cos: (x)=> Math.cos(ANGLE==="DEG" ? toRad(x) : x),
+    tan: (x)=> Math.tan(ANGLE==="DEG" ? toRad(x) : x),
+    asin:(x)=> ANGLE==="DEG" ? fromRad(Math.asin(x)) : Math.asin(x),
+    acos:(x)=> ANGLE==="DEG" ? fromRad(Math.acos(x)) : Math.acos(x),
+    atan:(x)=> ANGLE==="DEG" ? fromRad(Math.atan(x)) : Math.atan(x),
+  };
+
+  function preprocess(expr){
+    // Replace unicode signs and friendly tokens
+    let s = String(expr ?? "").trim();
+    if (!s) return "0";
+    s = s.replace(/×/g,"*").replace(/÷/g,"/").replace(/−/g,"-");
+    // factorial like 5! or (2+3)!
+    // We'll transform "X!" to "fact(X)" for simple number/paren token.
+    // A small tokenizer approach:
+    s = s.replace(/\s+/g,"");
+    // Power: allow ^
+    // Percent: treat "a%" as (a/100)
+    s = s.replace(/(\d+(\.\d+)?|\)|\bpi\b|\be\b)\%/gi, "($1/100)");
+    // Insert ANS token
+    s = s.replace(/\bANS\b/g, `(${ANS})`);
+
+    // Replace constants tokens
+    for (const [k,v] of Object.entries(CONST)){
+      const re = new RegExp(`\\b${k}\\b`, "g");
+      s = s.replace(re, `(${v})`);
+    }
+
+    // Support ln as natural log
+    s = s.replace(/\bln\s*\(/g, "logn(");
+
+    // Convert factorial postfix: token!
+    // Handle patterns: number! , )!
+    // We will loop until no change (to catch nested).
+    let prev;
+    do{
+      prev = s;
+      s = s.replace(/(\d+(\.\d+)?|\([^()]*\))!/g, "fact($1)");
+    } while (s !== prev);
+
+    return s;
+  }
+
+  function evaluate(expr){
+    const s = preprocess(expr);
+
+    // Only allow a whitelist of characters
+    if (!/^[0-9eE\.\+\-\*\/\^\(\),A-Za-z_]+$/.test(s)) {
+      throw new Error("Invalid characters");
+    }
+
+    // Convert ^ to ** for JS
+    const js = s.replace(/\^/g, "**");
+
+    const scope = {
+      // trig
+      sin: trig.sin, cos: trig.cos, tan: trig.tan,
+      asin: trig.asin, acos: trig.acos, atan: trig.atan,
+
+      // math
+      sqrt: Math.sqrt,
+      abs: Math.abs,
+      floor: Math.floor,
+      ceil: Math.ceil,
+      round: Math.round,
+      min: Math.min,
+      max: Math.max,
+
+      // logs
+      log: (x)=> Math.log10(x),
+      logn: (x)=> Math.log(x),
+
+      // combi
+      fact, nCr, nPr
+    };
+
+    // Build a function with scoped names
+    const fn = Function(...Object.keys(scope), `"use strict"; return (${js});`);
+    const val = fn(...Object.values(scope));
+    if (typeof val !== "number" || Number.isNaN(val)) return NaN;
+    return val;
+  }
+
+  function formatNumber(x){
+    const mode = document.getElementById("roundMode").value;
+    if (!isFinite(x)) return String(x);
+    if (mode === "none") return String(x);
+    const digits = parseInt(mode,10);
+    // toPrecision keeps scientific; good for engineering
+    return Number(x).toPrecision(digits).replace(/\.0+$/,"").replace(/(\.\d*?)0+$/,"$1");
+  }
+
+  // ====== UI: Calculator ======
+  const exprInput = document.getElementById("exprInput");
+  const exprView = document.getElementById("exprView");
+  const resView  = document.getElementById("resView");
+  const historyEl= document.getElementById("history");
+  const modePill = document.getElementById("modePill");
+  const memView  = document.getElementById("memView");
+
+  function syncDisplay(){
+    const e = exprInput.value || "0";
+    exprView.textContent = e;
+    resView.textContent  = formatNumber(ANS);
+    modePill.textContent = "Mode: " + ANGLE;
+    memView.textContent  = formatNumber(MEM);
+  }
+
+  function pushHistory(expr, val){
+    const div = document.createElement("div");
+    div.className = "hitem";
+    div.innerHTML = `<div class="e">${escapeHtml(expr)}</div><div class="v">${escapeHtml(formatNumber(val))}</div>`;
+    div.onclick = () => {
+      exprInput.value = expr;
+      ANS = val;
+      syncDisplay();
+    };
+    historyEl.prepend(div);
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+
+  function insertAtCursor(text){
+    const el = exprInput;
+    const start = el.selectionStart ?? el.value.length;
+    const end   = el.selectionEnd ?? el.value.length;
+    const before = el.value.slice(0,start);
+    const after  = el.value.slice(end);
+    el.value = before + text + after;
+    const pos = start + text.length;
+    el.setSelectionRange(pos,pos);
+    el.focus();
+    syncDisplay();
+  }
+
+  function doEval(){
+    const expr = exprInput.value;
+    const val = evaluate(expr);
+    ANS = val;
+    syncDisplay();
+    pushHistory(expr, val);
+  }
+
+  document.querySelectorAll("[data-insert]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      insertAtCursor(btn.getAttribute("data-insert"));
+    });
+  });
+
+  document.querySelectorAll("[data-fn]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      insertAtCursor(btn.getAttribute("data-fn"));
+    });
+  });
+
+  document.querySelectorAll("[data-act]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const act = btn.getAttribute("data-act");
+      if (act==="AC"){
+        exprInput.value = "";
+        ANS = 0;
+        syncDisplay();
+      } else if (act==="DEL"){
+        const el = exprInput;
+        const start = el.selectionStart ?? el.value.length;
+        const end   = el.selectionEnd ?? el.value.length;
+        if (start !== end){
+          el.value = el.value.slice(0,start) + el.value.slice(end);
+          el.setSelectionRange(start,start);
+        } else if (start>0){
+          el.value = el.value.slice(0,start-1) + el.value.slice(start);
+          el.setSelectionRange(start-1,start-1);
+        }
+        el.focus();
+        syncDisplay();
+      } else if (act==="="){
+        try{ doEval(); } catch(e){ resView.textContent = "Error"; }
+      } else if (act==="neg"){
+        // toggle sign around selection or whole
+        const el = exprInput;
+        const start = el.selectionStart ?? 0;
+        const end   = el.selectionEnd ?? 0;
+        if (start !== end){
+          const sel = el.value.slice(start,end);
+          el.value = el.value.slice(0,start) + `(-1*(${sel}))` + el.value.slice(end);
+        } else {
+          el.value = `(-1*(${el.value || 0}))`;
+        }
+        el.focus();
+        syncDisplay();
+      } else if (act==="ans"){
+        insertAtCursor("ANS");
+      } else if (act==="fact"){
+        insertAtCursor("!");
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-mem]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const act = btn.getAttribute("data-mem");
+      try{
+        const cur = evaluate(exprInput.value || String(ANS));
+        if (act==="MC") MEM = 0;
+        if (act==="MR") insertAtCursor(String(MEM));
+        if (act==="MS") MEM = cur;
+        if (act==="M+") MEM = MEM + cur;
+        if (act==="M-") MEM = MEM - cur;
+        syncDisplay();
+      }catch(e){
+        resView.textContent = "Error";
+      }
+    });
+  });
+
+  exprInput.addEventListener("keydown", (e)=>{
+    if (e.key === "Enter"){
+      e.preventDefault();
+      try{ doEval(); } catch(err){ resView.textContent = "Error"; }
+    }
+  });
+
+  document.getElementById("angleMode").addEventListener("change",(e)=>{
+    ANGLE = e.target.value;
+    syncDisplay();
+  });
+  document.getElementById("roundMode").addEventListener("change", syncDisplay);
+
+  // ====== Tabs ======
+  function setTab(group, name){
+    const tabs = document.querySelectorAll(`.tab[data-tab]`);
+    tabs.forEach(t=>{
+      const tabName = t.getAttribute("data-tab");
+      // Two groups: left (calc/help) and right (solver/constants)
+      // We'll detect by presence of target ids.
+      const leftTargets = ["calc","help"];
+      const rightTargets = ["solver","constants"];
+      if (leftTargets.includes(tabName) && leftTargets.includes(name)){
+        t.classList.toggle("active", tabName===name);
+      }
+      if (rightTargets.includes(tabName) && rightTargets.includes(name)){
+        t.classList.toggle("active", tabName===name);
+      }
+    });
+
+    // show/hide
+    const map = {
+      calc: "tab-calc",
+      help: "tab-help",
+      solver:"tab-solver",
+      constants:"tab-constants"
+    };
+    const keys = Object.keys(map);
+    keys.forEach(k=>{
+      const el = document.getElementById(map[k]);
+      if (!el) return;
+      // only hide within its panel group
+      const leftGroup = ["calc","help"];
+      const rightGroup = ["solver","constants"];
+      if (leftGroup.includes(k) && leftGroup.includes(name)){
+        el.style.display = (k===name) ? "" : "none";
+      }
+      if (rightGroup.includes(k) && rightGroup.includes(name)){
+        el.style.display = (k===name) ? "" : "none";
+      }
+    });
+  }
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.addEventListener("click", ()=>{
+      setTab(null, t.getAttribute("data-tab"));
+    });
+  });
+
+  // ====== Formula Solver ======
+  // Each formula defines: id, title, pretty, vars, units(optional), solve: {varName: fn(inputs)->number}
+  const FORMULAS = [
+    {
+      id:"ohm", title:"Ohm заңы", pretty:"V = I · R",
+      vars:["V","I","R"],
+      units:{V:"V", I:"A", R:"Ω"},
+      solve:{
+        V: ({I,R}) => I*R,
+        I: ({V,R}) => V/R,
+        R: ({V,I}) => V/I
+      },
+      note:"Ток, кернеу, кедергі."
+    },
+    {
+      id:"power_e", title:"Электр қуаты", pretty:"P = V · I",
+      vars:["P","V","I"],
+      units:{P:"W", V:"V", I:"A"},
+      solve:{
+        P: ({V,I}) => V*I,
+        V: ({P,I}) => P/I,
+        I: ({P,V}) => P/V
+      }
+    },
+    {
+      id:"kinetic", title:"Кинетикалық энергия", pretty:"Eₖ = ½ · m · v²",
+      vars:["Ek","m","v"],
+      units:{Ek:"J", m:"kg", v:"m/s"},
+      solve:{
+        Ek: ({m,v}) => 0.5*m*v*v,
+        m: ({Ek,v}) => (2*Ek)/(v*v),
+        v: ({Ek,m}) => Math.sqrt((2*Ek)/m)
+      }
+    },
+    {
+      id:"potential", title:"Потенциалдық энергия (mgh)", pretty:"Eₚ = m · g · h",
+      vars:["Ep","m","g","h"],
+      units:{Ep:"J", m:"kg", g:"m/s²", h:"m"},
+      solve:{
+        Ep: ({m,g,h}) => m*g*h,
+        m: ({Ep,g,h}) => Ep/(g*h),
+        g: ({Ep,m,h}) => Ep/(m*h),
+        h: ({Ep,m,g}) => Ep/(m*g)
+      },
+      defaults:{g:"g0"}
+    },
+    {
+      id:"newton2", title:"Ньютон 2-заңы", pretty:"F = m · a",
+      vars:["F","m","a"],
+      units:{F:"N", m:"kg", a:"m/s²"},
+      solve:{
+        F: ({m,a}) => m*a,
+        m: ({F,a}) => F/a,
+        a: ({F,m}) => F/m
+      }
+    },
+    {
+      id:"momentum", title:"Импульс", pretty:"p = m · v",
+      vars:["p","m","v"],
+      units:{p:"kg·m/s", m:"kg", v:"m/s"},
+      solve:{
+        p: ({m,v}) => m*v,
+        m: ({p,v}) => p/v,
+        v: ({p,m}) => p/m
+      }
+    },
+    {
+      id:"pressure", title:"Қысым", pretty:"P = F / A",
+      vars:["P","F","A"],
+      units:{P:"Pa", F:"N", A:"m²"},
+      solve:{
+        P: ({F,A}) => F/A,
+        F: ({P,A}) => P*A,
+        A: ({P,F}) => F/P
+      }
+    },
+    {
+      id:"density", title:"Тығыздық", pretty:"ρ = m / V",
+      vars:["rho","m","V"],
+      units:{rho:"kg/m³", m:"kg", V:"m³"},
+      solve:{
+        rho: ({m,V}) => m/V,
+        m: ({rho,V}) => rho*V,
+        V: ({rho,m}) => m/rho
+      }
+    },
+    {
+      id:"grav_force", title:"Бүкіләлемдік тартылыс", pretty:"F = G·m₁·m₂ / r²",
+      vars:["F","G","m1","m2","r"],
+      units:{F:"N", G:"", m1:"kg", m2:"kg", r:"m"},
+      solve:{
+        F: ({G,m1,m2,r}) => G*m1*m2/(r*r),
+        r: ({G,m1,m2,F}) => Math.sqrt(G*m1*m2/F),
+        m1: ({F,G,m2,r}) => F*r*r/(G*m2),
+        m2: ({F,G,m1,r}) => F*r*r/(G*m1),
+        G: ({F,m1,m2,r}) => F*r*r/(m1*m2)
+      },
+      defaults:{G:"G"}
+    },
+    {
+      id:"coulomb", title:"Кулон заңы", pretty:"F = k·|q₁·q₂| / r²",
+      vars:["F","k","q1","q2","r"],
+      units:{F:"N", k:"", q1:"C", q2:"C", r:"m"},
+      solve:{
+        F: ({k,q1,q2,r}) => k*Math.abs(q1*q2)/(r*r),
+        r: ({k,q1,q2,F}) => Math.sqrt(k*Math.abs(q1*q2)/F),
+        q1: ({F,k,q2,r}) => (F*r*r)/(k*Math.abs(q2)),
+        q2: ({F,k,q1,r}) => (F*r*r)/(k*Math.abs(q1)),
+        k: ({F,q1,q2,r}) => (F*r*r)/Math.abs(q1*q2)
+      },
+      defaults:{k:"k"}
+    },
+    {
+      id:"ideal_gas", title:"Идеал газ теңдеуі", pretty:"P·V = n·R·T",
+      vars:["P","V","n","R","T"],
+      units:{P:"Pa", V:"m³", n:"mol", R:"", T:"K"},
+      solve:{
+        P: ({n,R,T,V}) => (n*R*T)/V,
+        V: ({n,R,T,P}) => (n*R*T)/P,
+        n: ({P,V,R,T}) => (P*V)/(R*T),
+        T: ({P,V,n,R}) => (P*V)/(n*R),
+        R: ({P,V,n,T}) => (P*V)/(n*T)
+      },
+      defaults:{R:"R"}
+    },
+    {
+      id:"kinematics_v", title:"Кинематика (жылдамдық)", pretty:"v = v₀ + a·t",
+      vars:["v","v0","a","t"],
+      units:{v:"m/s", v0:"m/s", a:"m/s²", t:"s"},
+      solve:{
+        v: ({v0,a,t}) => v0 + a*t,
+        v0: ({v,a,t}) => v - a*t,
+        a: ({v,v0,t}) => (v - v0)/t,
+        t: ({v,v0,a}) => (v - v0)/a
+      }
+    },
+    {
+      id:"kinematics_s", title:"Кинематика (жол)", pretty:"s = v₀·t + ½·a·t²",
+      vars:["s","v0","a","t"],
+      units:{s:"m", v0:"m/s", a:"m/s²", t:"s"},
+      solve:{
+        s: ({v0,a,t}) => v0*t + 0.5*a*t*t,
+        v0: ({s,a,t}) => (s - 0.5*a*t*t)/t,
+        a: ({s,v0,t}) => (2*(s - v0*t))/(t*t),
+        // Solve for t (quadratic): 0.5*a*t^2 + v0*t - s = 0
+        t: ({s,v0,a}) => {
+          const A = 0.5*a, B=v0, C=-s;
+          if (Math.abs(A) < 1e-15) return s/v0;
+          const D = B*B - 4*A*C;
+          if (D < 0) return NaN;
+          const t1 = (-B + Math.sqrt(D))/(2*A);
+          const t2 = (-B - Math.sqrt(D))/(2*A);
+          // choose positive
+          const cand = [t1,t2].filter(x=>isFinite(x) && x>=0);
+          return cand.length ? Math.min(...cand) : NaN;
+        }
+      },
+      note:"t табу үшін квадрат теңдеу шешіледі (оң түбір таңдалады)."
+    },
+    {
+      id:"quadratic", title:"Квадрат теңдеу", pretty:"ax² + bx + c = 0 (түбірлері)",
+      vars:["a","b","c","x1","x2"],
+      units:{},
+      solve:{
+        x1: ({a,b,c}) => {
+          const D=b*b-4*a*c; if (D<0) return NaN;
+          return (-b + Math.sqrt(D))/(2*a);
+        },
+        x2: ({a,b,c}) => {
+          const D=b*b-4*a*c; if (D<0) return NaN;
+          return (-b - Math.sqrt(D))/(2*a);
+        },
+        a: ({b,c,x1}) => (-(b*x1 + c))/(x1*x1),
+        b: ({a,c,x1}) => (-(a*x1*x1 + c))/x1,
+        c: ({a,b,x1}) => -(a*x1*x1 + b*x1)
+      },
+      note:"D<0 болса — нақты түбір жоқ (NaN)."
+    },
+  ];
+
+  const formulaSelect = document.getElementById("formulaSelect");
+  const solveFor = document.getElementById("solveFor");
+  const varsArea = document.getElementById("varsArea");
+  const formulaText = document.getElementById("formulaText");
+  const solverOut = document.getElementById("solverOut");
+  const solverNote = document.getElementById("solverNote");
+
+  // Fill formula select
+  FORMULAS.forEach(f=>{
+    const opt = document.createElement("option");
+    opt.value = f.id;
+    opt.textContent = f.title + " — " + f.pretty;
+    formulaSelect.appendChild(opt);
+  });
+
+  function getFormula(){
+    return FORMULAS.find(x=>x.id===formulaSelect.value) || FORMULAS[0];
+  }
+
+  function renderSolveFor(){
+    const f = getFormula();
+    solveFor.innerHTML = "";
+    // Solve targets are keys in f.solve
+    Object.keys(f.solve).forEach(v=>{
+      const opt = document.createElement("option");
+      opt.value = v;
+      const unit = (f.units && f.units[v]) ? ` (${f.units[v]})` : "";
+      opt.textContent = v + unit;
+      solveFor.appendChild(opt);
+    });
+  }
+
+  function renderVars(){
+    const f = getFormula();
+    const target = solveFor.value;
+    formulaText.textContent = `${f.title}: ${f.pretty}`;
+    solverNote.textContent = f.note ? ("Ескерту: " + f.note) : "";
+
+    varsArea.innerHTML = "";
+
+    // We need inputs for all vars except target
+    const need = f.vars.filter(v=>v !== target);
+    need.forEach(v=>{
+      const wrap = document.createElement("div");
+      wrap.style.marginBottom = "10px";
+
+      const lbl = document.createElement("div");
+      lbl.className = "label";
+      const unit = (f.units && f.units[v]) ? ` (${f.units[v]})` : "";
+      lbl.textContent = `${v}${unit}`;
+
+      const inp = document.createElement("input");
+      inp.id = `var-${v}`;
+      inp.placeholder = "Мысалы: 10 немесе 2*pi немесе sqrt(2)";
+      // defaults like g=g0, G=G, etc.
+      if (f.defaults && f.defaults[v]) inp.value = f.defaults[v];
+
+      wrap.appendChild(lbl);
+      wrap.appendChild(inp);
+      varsArea.appendChild(wrap);
+    });
+  }
+
+  function parseVal(s){
+    // allow using our evaluator
+    return evaluate(String(s));
+  }
+
+  document.getElementById("solveBtn").addEventListener("click", ()=>{
+    const f = getFormula();
+    const target = solveFor.value;
+    const need = f.vars.filter(v=>v !== target);
+
+    const inputs = {};
+    try{
+      need.forEach(v=>{
+        const el = document.getElementById(`var-${v}`);
+        const val = parseVal(el.value);
+        inputs[v] = val;
+      });
+
+      // Also allow constants in formula, e.g., default G
+      // Put any constant var if exists:
+      if (f.vars.includes("G") && inputs.G == null) inputs.G = CONST.G;
+      if (f.vars.includes("k") && inputs.k == null) inputs.k = CONST.k;
+      if (f.vars.includes("R") && inputs.R == null) inputs.R = CONST.R;
+      if (f.vars.includes("g") && inputs.g == null) inputs.g = CONST.g0;
+
+      // Compute
+      const fn = f.solve[target];
+      const out = fn(inputs);
+      solverOut.textContent = "Нәтиже: " + formatNumber(out) + (f.units && f.units[target] ? " " + f.units[target] : "");
+    }catch(e){
+      solverOut.textContent = "Нәтиже: Error";
+    }
+  });
+
+  document.getElementById("clearVars").addEventListener("click", ()=>{
+    const f = getFormula();
+    const target = solveFor.value;
+    f.vars.filter(v=>v!==target).forEach(v=>{
+      const el = document.getElementById(`var-${v}`);
+      if (el) el.value = (f.defaults && f.defaults[v]) ? f.defaults[v] : "";
+    });
+    solverOut.textContent = "Нәтиже: —";
+  });
+
+  formulaSelect.addEventListener("change", ()=>{
+    renderSolveFor();
+    renderVars();
+  });
+  solveFor.addEventListener("change", renderVars);
+
+  // ====== Constants tab content ======
+  const constantsList = document.getElementById("constantsList");
+  const rows = Object.entries(CONST).map(([k,v])=>{
+    let desc = "";
+    if (k==="c") desc = "жарық жылдамдығы (m/s)";
+    if (k==="G") desc = "гравитациялық тұрақты";
+    if (k==="k") desc = "Кулон тұрақтысы";
+    if (k==="h") desc = "Планк тұрақтысы (J·s)";
+    if (k==="g0") desc = "стандарт ауырлық үдеуі";
+    if (k==="R") desc = "газ тұрақтысы";
+    if (k==="NA") desc = "Авогадро саны";
+    if (k==="pi") desc = "π";
+    if (k==="e") desc = "e";
+    return `<div style="margin:8px 0">
+      <b>${k}</b> = <span class="muted">${v}</span> <span class="badge">${desc}</span>
+    </div>`;
+  }).join("");
+  constantsList.innerHTML = rows + `<div class="sep"></div><div class="muted">Калькуляторда тікелей қолдан: <b>G</b>, <b>k</b>, <b>c</b>, <b>R</b> т.б.</div>`;
+
+  // Init solver UI
+  renderSolveFor();
+  renderVars();
+
+  // Init display
+  exprInput.value = "2*sin(30)+sqrt(9)+3^2";
+  try { ANS = evaluate(exprInput.value); } catch(e){ ANS = 0; }
+  syncDisplay();
+
+})();
+</script>
+</body>
+</html>

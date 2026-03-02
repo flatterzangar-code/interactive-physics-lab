@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newton Space Lab - Full Scroll</title>
+    <style>
+        /* БҮКІЛ БЕТКЕ СКРОЛЛ ЖАСАУ */
+        body {
+            margin: 0;
+            background-color: #0b0d17;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* Скролл қосылды */
+            overflow-x: hidden;
+        }
+
+        /* СИМУЛЯЦИЯ ЭКРАННЫҢ ТОЛЫҚ БИІКТІГІН АЛАДЫ */
+        .simulation-container {
+            width: 100vw;
+            height: 100vh; /* Телефон экранының толық биіктігі */
+            position: relative;
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
+            flex-shrink: 0; /* Жиырылып қалмауы үшін */
+        }
+
+        /* АҚПАРАТ ПАНЕЛІ СИМУЛЯЦИЯДАН КЕЙІН ТҰРАДЫ */
+        .info-panel {
+            width: 100%;
+            background: rgba(15, 20, 35, 1);
+            padding: 25px;
+            box-sizing: border-box;
+            border-top: 2px solid rgba(76, 201, 240, 0.3);
+        }
+
+        canvas { display: block; width: 100%; height: 100%; }
+
+        .controls-container {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            pointer-events: none;
+        }
+
+        .btn {
+            pointer-events: auto;
+            width: 70px; height: 70px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(76, 201, 240, 0.5);
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            backdrop-filter: blur(5px);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn:active { background: rgba(76, 201, 240, 0.4); transform: scale(0.9); }
+
+        h2 { color: #4cc9f0; border-bottom: 2px solid #4cc9f0; padding-bottom: 10px; text-transform: uppercase; font-size: 18px; }
+        .card { background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px; font-size: 14px; line-height: 1.6; }
+        b { color: #f72585; }
+
+        .quiz-container { margin-top: 30px; padding-bottom: 50px; }
+        .option {
+            background: #1b2735; padding: 12px; margin: 8px 0;
+            border-radius: 5px; cursor: pointer; border: 1px solid #333;
+        }
+        .correct { background: #064e3b !important; border-color: #4ade80 !important; }
+        .wrong { background: #450a0a !important; border-color: #f72585 !important; }
+    </style>
+</head>
+<body>
+
+<div class="simulation-container">
+    <canvas id="canvas"></canvas>
+    <div class="controls-container">
+        <div class="btn" id="btnLeft">←</div>
+        <div class="btn" id="btnGas" style="border-color: #4ade80; color: #4ade80;">ГАЗ</div>
+        <div class="btn" id="btnRight">→</div>
+    </div>
+</div>
+
+<div class="info-panel">
+    <h2>Ньютонның қозғалыс заңдары</h2>
+    
+    <div class="card">
+        <b>1-заң (Инерция):</b> Кеме "ГАЗ" өшірулі болса да қозғала береді. Себебі вакуумде үйкеліс жоқ. Денеге күш әсер етпесе, ол өз жылдамдығын сақтайды.
+    </div>
+
+    <div class="card">
+        <b>2-заң (Динамика):</b> "ГАЗ" батырмасын басқанда кеме үдеу алады. Күш неғұрлым көп болса, жылдамдық соғұрлым тез өседі.
+    </div>
+
+    <div class="card">
+        <b>3-заң (Әсер және қарсы әсер):</b> Кеме алға жылжуы үшін артынан от (бөлшектер) шығарады. От артқа итеріледі, ал кеме соған тең күшпен алға итеріледі.
+    </div>
+
+    <div class="quiz-container">
+        <h2>Білім тексеру</h2>
+        <div id="quiz"></div>
+        <button onclick="checkResult()" style="width: 100%; padding: 15px; background: #4cc9f0; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; color: #000;">Нәтижені көру</button>
+        <p id="score-text" style="text-align: center; font-weight: bold; margin-top: 15px;"></p>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Экран өлшемі өзгергенде canvas-ты реттеу
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const ship = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        vx: 0, vy: 0,
+        angle: -Math.PI / 2, 
+        radius: 20
+    };
+
+    let particles = [];
+    const keys = { gas: false, left: false, right: false };
+
+    // Басқару батырмалары
+    function setupButton(id, keyName) {
+        const btn = document.getElementById(id);
+        const start = (e) => { e.preventDefault(); keys[keyName] = true; };
+        const end = (e) => { e.preventDefault(); keys[keyName] = false; };
+        
+        btn.addEventListener('touchstart', start);
+        btn.addEventListener('touchend', end);
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('mouseup', end);
+        btn.addEventListener('mouseleave', end);
+    }
+
+    setupButton('btnLeft', 'left');
+    setupButton('btnRight', 'right');
+    setupButton('btnGas', 'gas');
+
+    function update() {
+        if (keys.left) ship.angle -= 0.06;
+        if (keys.right) ship.angle += 0.06;
+
+        if (keys.gas) {
+            const force = 0.15;
+            ship.vx += Math.cos(ship.angle) * force;
+            ship.vy += Math.sin(ship.angle) * force;
+
+            for(let i=0; i<2; i++) {
+                particles.push({
+                    x: ship.x - Math.cos(ship.angle) * 10,
+                    y: ship.y - Math.sin(ship.angle) * 10,
+                    vx: ship.vx - Math.cos(ship.angle) * 3 + (Math.random()-0.5),
+                    vy: ship.vy - Math.sin(ship.angle) * 3 + (Math.random()-0.5),
+                    life: 1.0
+                });
+            }
+        }
+
+        ship.x += ship.vx;
+        ship.y += ship.vy;
+
+        // Экран шетінен өткенде екінші жақтан шығу
+        if (ship.x > canvas.width) ship.x = 0;
+        if (ship.x < 0) ship.x = canvas.width;
+        if (ship.y > canvas.height) ship.y = 0;
+        if (ship.y < 0) ship.y = canvas.height;
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx; p.y += p.vy;
+            p.life -= 0.04;
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // От (бөлшектер)
+        particles.forEach(p => {
+            ctx.fillStyle = `rgba(255, 100, 50, ${p.life})`;
+            ctx.beginPath(); ctx.arc(p.x, p.y, 4 * p.life, 0, Math.PI * 2); ctx.fill();
+        });
+
+        // Кеме
+        ctx.save();
+        ctx.translate(ship.x, ship.y);
+        ctx.rotate(ship.angle);
+        ctx.beginPath();
+        ctx.moveTo(18, 0); ctx.lineTo(-12, 12); ctx.lineTo(-4, 0); ctx.lineTo(-12, -12);
+        ctx.closePath();
+        ctx.fillStyle = "#4cc9f0";
+        ctx.shadowBlur = 15; ctx.shadowColor = "#4cc9f0";
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function loop() {
+        update(); draw();
+        requestAnimationFrame(loop);
+    }
+    loop();
+
+    // Тест бөлімі
+    const quizData = [
+        { q: "Газды өшіргенде кеменің тоқтамауы қай заңға жатады?", a: ["1-заң", "2-заң", "3-заң"], c: 0 },
+        { q: "Кемеден шыққан оттың артқа тебілуі нені дәлелдейді?", a: ["Үйкелісті", "Инерцияны", "Әсерге қарсы әсерді"], c: 2 },
+        { q: "Кеме жылдамдығын өзгерту үшін не қажет?", a: ["Күш әсері", "Ештеңе", "Тек бағыт"], c: 0 },
+        { q: "Вакуумде кеменің тоқтамай қозғалу себебі?", a: ["Магнит", "Үйкеліс жоқтығы", "Газ көп"], c: 1 },
+        { q: "Ньютонның неше заңы бар?", a: ["2", "3", "5"], c: 1 }
+    ];
+
+    let userAnswers = new Array(5).fill(null);
+    function loadQuiz() {
+        const quizBox = document.getElementById('quiz');
+        quizData.forEach((d, i) => {
+            const div = document.createElement('div');
+            div.innerHTML = `<p style="font-size: 14px;">${i+1}. ${d.q}</p>` + 
+                d.a.map((opt, idx) => `<div class="option" onclick="ans(${i}, ${idx}, this)">${opt}</div>`).join('');
+            quizBox.appendChild(div);
+        });
+    }
+
+    window.ans = (qi, ai, el) => {
+        userAnswers[qi] = ai;
+        const options = el.parentElement.querySelectorAll('.option');
+        options.forEach(o => o.classList.remove('correct', 'wrong'));
+        if(ai === quizData[qi].c) el.classList.add('correct'); else el.classList.add('wrong');
+    };
+
+    window.checkResult = () => {
+        let score = userAnswers.filter((a, i) => a === quizData[i].c).length;
+        document.getElementById('score-text').innerText = `Нәтиже: 5-тен ${score} дұрыс!`;
+    };
+
+    loadQuiz();
+</script>
+</body>
+</html>

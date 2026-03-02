@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collisions Lab: Mobile Edition</title>
+    <style>
+        body {
+            margin: 0; background-color: #020617; color: white;
+            font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column;
+            min-height: 100vh; overflow-x: hidden; overflow-y: auto;
+        }
+
+        /* --- СТАТИСТИКА (ЖОҒАРЫДА БЕКІТІЛГЕН) --- */
+        .stats-header {
+            position: sticky; top: 0; background: rgba(2, 6, 23, 0.9);
+            backdrop-filter: blur(10px); padding: 10px; display: flex;
+            justify-content: space-around; font-size: 12px; z-index: 100;
+            border-bottom: 1px solid #1e293b; color: #38bdf8;
+        }
+
+        /* --- СИМУЛЯЦИЯ АЙМАҒЫ --- */
+        .viewport { 
+            width: 100%; display: flex; flex-direction: column; 
+            align-items: center; padding: 15px 0; background: #010409;
+        }
+        
+        canvas { 
+            background: #010409; border-radius: 10px; 
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.1); 
+            border: 1px solid #1e293b; max-width: 95%; height: auto;
+        }
+
+        /* --- БАСҚАРУ ЖӘНЕ МАЗМҰН --- */
+        .content-container { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+        .controls-card {
+            background: #1e293b; padding: 20px; border-radius: 20px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .param-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .param-group { background: rgba(15, 23, 42, 0.5); padding: 12px; border-radius: 15px; }
+
+        h4 { margin: 0 0 10px 0; font-size: 12px; text-transform: uppercase; color: #94a3b8; }
+        label { font-size: 11px; display: block; margin-bottom: 5px; }
+        
+        input[type=range] { width: 100%; accent-color: #38bdf8; cursor: pointer; margin-bottom: 10px; }
+        
+        .formula {
+            background: rgba(56, 189, 248, 0.1); padding: 15px; border-radius: 10px;
+            text-align: center; color: #fbbf24; font-size: 18px; margin: 15px 0; border: 1px solid #fbbf24;
+        }
+
+        .btn-reset {
+            background: #38bdf8; color: #020617; border: none; padding: 15px;
+            border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; 
+            margin-top: 10px; font-size: 14px;
+        }
+
+        .sidebar { background: rgba(15, 23, 42, 0.95); padding: 20px; border-radius: 20px; }
+
+        /* ТЕСТ СТИЛЬДЕРІ */
+        .option {
+            background: #0f172a; padding: 12px; margin: 8px 0; border-radius: 10px;
+            cursor: pointer; border: 1px solid #334155; transition: 0.2s; font-size: 14px;
+        }
+        .correct { background: #064e3b !important; border-color: #22c55e !important; }
+        .wrong { background: #450a0a !important; border-color: #f43f5e !important; }
+    </style>
+</head>
+<body>
+
+<div class="stats-header">
+    <div id="statP">P: 0</div>
+    <div id="statE">E: 0</div>
+</div>
+
+<div class="viewport">
+    <canvas id="canvas" width="800" height="400"></canvas>
+</div>
+
+<div class="content-container">
+    <div class="controls-card">
+        <div class="param-grid">
+            <div class="param-group">
+                <h4 style="color:#f43f5e">Шар 1</h4>
+                <label>m: <span id="m1t">2</span> kg</label>
+                <input type="range" id="m1" min="1" max="10" value="2">
+                <label>v: <span id="v1t">5</span> m/s</label>
+                <input type="range" id="v1" min="-10" max="10" value="5">
+            </div>
+            <div class="param-group">
+                <h4 style="color:#38bdf8">Шар 2</h4>
+                <label>m: <span id="m2t">5</span> kg</label>
+                <input type="range" id="m2" min="1" max="10" value="5">
+                <label>v: <span id="v2t">-3</span> m/s</label>
+                <input type="range" id="v2" min="-10" max="10" value="-3">
+            </div>
+        </div>
+        
+        <div style="margin-top: 15px; text-align: center;">
+            <label style="font-size: 12px;">Серпімділік (e): <span id="et">1.0</span></label>
+            <input type="range" id="el" min="0" max="1" step="0.1" value="1" style="margin-bottom: 20px;">
+            <button class="btn-reset" onclick="initSimulation()">СИМУЛЯЦИЯНЫ БАСТАУ</button>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <h2>Соқтығысу Физикасы</h2>
+        <div class="formula">P = m · v</div>
+        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; font-size: 14px;">
+            <b>Импульс</b> — дененің қозғалыс мөлшері. Соқтығысу кезінде ол әрқашан сақталады.
+        </div>
+        <h3>Энергия</h3>
+        <p style="font-size: 13px; color: #94a3b8;">Егер <b>e < 1</b> болса, энергияның бір бөлігі жылуға айналады. Бұл нақты өмірдегі процестерге (соқтығыстарға) тән.</p>
+    </div>
+
+    <div class="sidebar">
+        <h3>Лабораториялық Тест</h3>
+        <div id="quiz-content"></div>
+        <p id="quiz-result" style="text-align:center; font-weight:bold; color:#38bdf8; margin-top: 15px;"></p>
+    </div>
+
+    <div style="height: 40px;"></div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let balls = [];
+    let shockwaves = [];
+    let particles = [];
+
+    const ui = ['m1','v1','m2','v2','el'];
+    ui.forEach(id => {
+        document.getElementById(id).oninput = function() {
+            document.getElementById(id+'t').innerText = this.value;
+        }
+    });
+
+    class Ball {
+        constructor(x, y, m, v, color) {
+            this.x = x; this.y = y; this.m = m; this.v = v; this.color = color;
+            this.r = 15 + m * 3;
+        }
+        draw() {
+            ctx.shadowBlur = Math.abs(this.v) * 5;
+            ctx.shadowColor = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = "white";
+            ctx.font = "bold 14px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(`${this.v.toFixed(1)}`, this.x, this.y - this.r - 10);
+        }
+        update() { this.x += this.v; }
+    }
+
+    function initSimulation() {
+        balls = [
+            new Ball(150, 200, parseFloat(document.getElementById('m1').value), parseFloat(document.getElementById('v1').value), '#f43f5e'),
+            new Ball(650, 200, parseFloat(document.getElementById('m2').value), parseFloat(document.getElementById('v2').value), '#38bdf8')
+        ];
+        shockwaves = [];
+        particles = [];
+    }
+
+    function checkCollision() {
+        let b1 = balls[0], b2 = balls[1];
+        let dx = b2.x - b1.x;
+        let minDist = b1.r + b2.r;
+
+        if (dx <= minDist) {
+            shockwaves.push({ x: (b1.x + b2.x)/2, r: 10, a: 1 });
+            let e = parseFloat(document.getElementById('el').value);
+            let vRel = b1.v - b2.v;
+            if(vRel < 0) return;
+
+            let impulse = (-(1 + e) * vRel) / (1/b1.m + 1/b2.m);
+            
+            if (e < 0.9) {
+                for(let i=0; i<12; i++) {
+                    particles.push({
+                        x: (b1.x + b2.x)/2, y: 200, 
+                        vx: (Math.random()-0.5)*8, vy: (Math.random()-0.5)*8,
+                        l: 30
+                    });
+                }
+            }
+
+            b1.v += impulse / b1.m;
+            b2.v -= impulse / b2.m;
+            b1.x = b2.x - minDist - 1;
+        }
+    }
+
+    function drawShockwaves() {
+        shockwaves.forEach((s, i) => {
+            ctx.beginPath();
+            ctx.arc(s.x, 200, s.r, 0, Math.PI*2);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${s.a})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            s.r += 6; s.a -= 0.05;
+            if(s.a <= 0) shockwaves.splice(i, 1);
+        });
+    }
+
+    function drawParticles() {
+        particles.forEach((p, i) => {
+            ctx.fillStyle = `rgba(251, 191, 36, ${p.l/30})`;
+            ctx.fillRect(p.x, p.y, 4, 4);
+            p.x += p.vx; p.y += p.vy; p.l--;
+            if(p.l <= 0) particles.splice(i, 1);
+        });
+    }
+
+    function animate() {
+        ctx.fillStyle = "rgba(2, 6, 23, 0.25)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Grid
+        ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 1;
+        for(let i=0; i<800; i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,400); ctx.stroke(); }
+
+        drawShockwaves();
+        drawParticles();
+        
+        balls.forEach(b => { b.update(); b.draw(); });
+        checkCollision();
+
+        let totalP = balls[0].m * balls[0].v + balls[1].m * balls[1].v;
+        let totalE = 0.5 * balls[0].m * balls[0].v**2 + 0.5 * balls[1].m * balls[1].v**2;
+        document.getElementById('statP').innerText = `Momentum: ${totalP.toFixed(2)}`;
+        document.getElementById('statE').innerText = `Energy: ${totalE.toFixed(2)} J`;
+
+        if(balls[0].x < -200 || balls[0].x > 1000) initSimulation();
+        requestAnimationFrame(animate);
+    }
+
+    const quizData = [
+        { q: "e = 1 болғанда соқтығысу қалай аталады?", a: ["Абсолют серпімді", "Серпімсіз", "Жылулық"], c: 0 },
+        { q: "Соқтығысу кезінде не әрқашан сақталады?", a: ["Энергия", "Импульс", "Жылдамдық"], c: 1 },
+        { q: "Дененің массасы 2 есе артса, импульсі қалай өзгереді?", a: ["2 есе азаяды", "Өзгермейді", "2 есе артады"], c: 2 },
+        { q: "e = 0 болса, шарлар қалай қозғалады?", a: ["Бірігіп қозғалады", "Кері ұшады", "Тоқтап қалады"], c: 0 },
+        { q: "Импульстің өлшем бірлігі?", a: ["Джоуль", "Ньютон", "кг·м/с"], c: 2 }
+    ];
+
+    function loadQuiz() {
+        const container = document.getElementById('quiz-content');
+        quizData.forEach((d, i) => {
+            const div = document.createElement('div');
+            div.innerHTML = `<p style='font-size:14px; margin-top:15px;'>${i+1}. ${d.q}</p>` + 
+                d.a.map((opt, idx) => `<div class="option" onclick="checkQuiz(${i}, ${idx}, this)">${opt}</div>`).join('');
+            container.appendChild(div);
+        });
+    }
+
+    let score = 0;
+    window.checkQuiz = (qi, ai, el) => {
+        if(el.parentElement.style.pointerEvents === 'none') return;
+        if(ai === quizData[qi].c) { el.classList.add('correct'); score++; }
+        else { el.classList.add('wrong'); }
+        el.parentElement.style.pointerEvents = 'none';
+        if(qi === 4) document.getElementById('quiz-result').innerText = `Нәтиже: 5-тен ${score} дұрыс!`;
+    }
+
+    initSimulation(); animate(); loadQuiz();
+</script>
+</body>
+</html>

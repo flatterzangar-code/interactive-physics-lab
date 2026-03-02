@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Электростатика: Mobile Edition</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #020617;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column; /* Элементтер бірінің астына бірі орналасады */
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        /* --- ЖОҒАРҒЫ ЖАҚ: СИМУЛЯЦИЯ --- */
+        .simulation-area {
+            width: 100%;
+            height: 400px; /* Телефон үшін оңтайлы биіктік */
+            position: relative;
+            background: #020617;
+            border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+            flex-shrink: 0;
+        }
+
+        /* --- БАСҚАРУ БАТЫРМАЛАРЫ (OVERLAY) --- */
+        .controls {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .controls button {
+            flex: 1;
+            padding: 12px 5px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            transition: 0.3s;
+            background: rgba(15, 23, 42, 0.85);
+            color: white;
+            backdrop-filter: blur(8px);
+        }
+
+        .btn-pos.active { background: #ef4444 !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); border-color: #f87171; }
+        .btn-neg.active { background: #3b82f6 !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); border-color: #60a5fa; }
+
+        /* --- ТӨМЕНГІ ЖАҚ: АҚПАРАТ ПАНЕЛІ --- */
+        .info-panel {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.95);
+            padding: 25px 20px;
+            box-sizing: border-box;
+        }
+
+        h2 { color: #38bdf8; font-size: 18px; text-transform: uppercase; margin-top: 0; }
+        h3 { color: #f87171; border-bottom: 1px solid #334155; padding-bottom: 5px; margin-top: 25px; }
+
+        .formula {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-style: italic;
+            color: #fbbf24;
+            margin: 15px 0;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            font-size: 18px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* --- ТЕСТ СТИЛЬДЕРІ --- */
+        .option {
+            background: #1e293b;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid #334155;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        .correct { background: #064e3b !important; border-color: #10b981 !important; }
+        .wrong { background: #450a0a !important; border-color: #ef4444 !important; }
+
+        canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+    </style>
+</head>
+<body>
+
+<div class="simulation-area">
+    <div class="controls">
+        <button id="btnPos" class="btn-pos active" onclick="setMode('positive')">+ Позитивті</button>
+        <button id="btnNeg" class="btn-neg" onclick="setMode('negative')">- Негативті</button>
+        <button style="background: #475569;" onclick="clearCharges()">Тазалау</button>
+    </div>
+    <canvas id="canvas"></canvas>
+</div>
+
+<div class="info-panel">
+    <h2>Электростатика негіздері</h2>
+    
+    <div class="card">
+        <b>Электр өрісі</b> — бұл зарядталған денелердің айналасында болатын материяның айрықша түрі. Ол басқа зарядтарға күшпен әсер етеді.
+    </div>
+
+    <h3>Кулон заңы</h3>
+    <div class="formula">F = k · (|q₁|·|q₂|) / r²</div>
+    <p style="font-size: 13px;">Екі зарядтың өзара әрекеттесу күші олардың модульдерінің көбейтіндісіне тура пропорционал және арақашықтықтың квадратына кері пропорционал.</p>
+
+    <h3>Өріс кернеулігі (E)</h3>
+    <div class="formula">E = F / q</div>
+    <div class="card">
+        Визуализациядағы ақ сызықтар (бөлшектер) <b>кернеулік сызықтарының</b> бағытын көрсетеді. Олар әрқашан оң зарядтан шығып, теріс зарядқа кіреді.
+    </div>
+
+    <h3>Нақты мысалдар:</h3>
+    <div class="card">
+        1. <b>Диполь:</b> Бір оң және бір теріс зарядтың жүйесі. Сызықтар доға тәрізді болады.<br><br>
+        2. <b>Аттас зарядтар:</b> Екі оң заряд бір-бірін тебеді.
+    </div>
+
+    <div id="quiz">
+        <h3>Білімді тексеру</h3>
+        <div id="quiz-container"></div>
+        <p id="quiz-final" style="font-weight: bold; color: #38bdf8; text-align: center; margin-top: 20px;"></p>
+    </div>
+
+    <div style="height: 50px;"></div> </div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resize() {
+        // Контейнердің нақты өлшемін алу
+        width = canvas.parentElement.clientWidth;
+        height = canvas.parentElement.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+    }
+    window.addEventListener('resize', resize);
+
+    const charges = [];
+    let currentMode = 'positive';
+    const particles = [];
+    const NUM_PARTICLES = 800; // Мобильді өнімділік үшін оңтайландырылды
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('btnPos').classList.toggle('active', mode === 'positive');
+        document.getElementById('btnNeg').classList.toggle('active', mode === 'negative');
+    }
+
+    function clearCharges() { charges.length = 0; }
+
+    // Тінтуір немесе Тач арқылы заряд қою
+    function addCharge(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        charges.push({
+            x: clientX - rect.left,
+            y: clientY - rect.top,
+            type: currentMode === 'positive' ? 1 : -1,
+            strength: 6000
+        });
+    }
+
+    canvas.addEventListener('mousedown', (e) => addCharge(e.clientX, e.clientY));
+    canvas.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        addCharge(touch.clientX, touch.clientY);
+        e.preventDefault();
+    }, { passive: false });
+
+    class Particle {
+        constructor() { this.reset(); }
+        reset() {
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.life = Math.random() * 80 + 40;
+            this.speed = Math.random() * 1.5 + 1;
+        }
+        update() {
+            let fx = 0, fy = 0;
+            charges.forEach(c => {
+                let dx = this.x - c.x, dy = this.y - c.y;
+                let distSq = dx*dx + dy*dy;
+                let dist = Math.sqrt(distSq);
+                if (dist < 15) this.life = 0;
+                let f = c.strength / (distSq + 200);
+                if (c.type > 0) { fx += (dx/dist)*f; fy += (dy/dist)*f; }
+                else { fx -= (dx/dist)*f; fy -= (dy/dist)*f; }
+            });
+
+            if (charges.length > 0) {
+                let mag = Math.sqrt(fx*fx + fy*fy);
+                if (mag > 0) { 
+                    this.x += (fx/mag)*this.speed; 
+                    this.y += (fy/mag)*this.speed; 
+                }
+            } else {
+                this.x += (Math.random()-0.5); 
+                this.y += (Math.random()-0.5);
+            }
+            this.life--;
+            if (this.life <= 0 || this.x < 0 || this.x > width || this.y < 0 || this.y > height) this.reset();
+        }
+        draw() {
+            ctx.fillStyle = `rgba(148, 163, 184, ${this.life/150})`;
+            ctx.beginPath(); ctx.arc(this.x, this.y, 1.2, 0, Math.PI*2); ctx.fill();
+        }
+    }
+
+    function initParticles() {
+        particles.length = 0;
+        for(let i=0; i<NUM_PARTICLES; i++) particles.push(new Particle());
+    }
+
+    function animate() {
+        ctx.fillStyle = "rgba(2, 6, 23, 0.25)";
+        ctx.fillRect(0, 0, width, height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        charges.forEach(c => {
+            ctx.shadowBlur = 25; ctx.shadowColor = c.type > 0 ? '#ef4444' : '#3b82f6';
+            ctx.fillStyle = c.type > 0 ? '#ef4444' : '#3b82f6';
+            ctx.beginPath(); ctx.arc(c.x, c.y, 14, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 0; ctx.fillStyle = "white";
+            ctx.font = "bold 18px monospace"; ctx.textAlign = "center";
+            ctx.fillText(c.type > 0 ? "+" : "−", c.x, c.y + 6);
+        });
+        requestAnimationFrame(animate);
+    }
+
+    // --- ТЕСТ БӨЛІМІ ---
+    const quizData = [
+        { q: "Электр өрісінің сызықтары қайдан басталады?", a: ["Теріс зарядтан", "Оң зарядтан", "Ешқайдан"], c: 1 },
+        { q: "Кулон заңында күш арақашықтыққа қалай тәуелді?", a: ["Тура пропорционал", "Тәуелді емес", "Квадратына кері пропорционал"], c: 2 },
+        { q: "Аттас зарядтар бір-бірімен қалай әрекеттеседі?", a: ["Тебіледі", "Тартылады", "Әсерлеспейді"], c: 0 },
+        { q: "Өріс кернеулігінің өлшем бірлігі?", a: ["Вольт", "Ньютон/Кулон", "Ампер"], c: 1 },
+        { q: "Теріс зарядтың өріс сызықтары қалай бағытталады?", a: ["Зарядқа қарай", "Зарядтан сыртқа", "Шеңбер бойымен"], c: 0 }
+    ];
+
+    let currentScore = 0;
+    function renderQuiz() {
+        const container = document.getElementById('quiz-container');
+        quizData.forEach((item, i) => {
+            const qBox = document.createElement('div');
+            qBox.innerHTML = `<p style="font-size:14px; margin-top:15px;">${i+1}. ${item.q}</p>`;
+            item.a.forEach((opt, idx) => {
+                const optDiv = document.createElement('div');
+                optDiv.className = 'option';
+                optDiv.innerText = opt;
+                optDiv.onclick = function() {
+                    if(idx === item.c) { this.classList.add('correct'); currentScore++; }
+                    else { this.classList.add('wrong'); }
+                    this.parentElement.style.pointerEvents = 'none';
+                    if(i === 4) document.getElementById('quiz-final').innerText = `Нәтиже: 5-тен ${currentScore} дұрыс!`;
+                };
+                qBox.appendChild(optDiv);
+            });
+            container.appendChild(qBox);
+        });
+    }
+
+    resize();
+    animate();
+    renderQuiz();
+</script>
+</body>
+</html>

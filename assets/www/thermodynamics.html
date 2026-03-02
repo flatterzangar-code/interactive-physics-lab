@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Energy Lab: Жылудан Электрге</title>
+    <style>
+        body {
+            margin: 0; background: #0f172a; color: white;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto;
+        }
+
+        /* --- СИМУЛЯЦИЯ АЙМАҒЫ (80vh биіктік) --- */
+        .simulation-area {
+            width: 100vw; height: 80vh; 
+            position: relative; overflow: hidden; flex-shrink: 0;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+        }
+
+        /* --- АҚПАРАТТЫҚ ПАНЕЛЬ (АСТЫНДА) --- */
+        .info-sidebar {
+            width: 100%; background: rgba(15, 23, 42, 1);
+            border-top: 2px solid #ef4444; padding: 25px; box-sizing: border-box;
+        }
+
+        /* --- ЗОНАЛИЗАЦИЯЛАНҒАН БАСҚАРУ ПАНЕЛІ --- */
+        .controls {
+            position: absolute; top: 15px; left: 15px; right: 15px;
+            background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(10px);
+            padding: 20px; border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.1); z-index: 10;
+        }
+
+        h2 { margin: 0 0 12px 0; color: #fbbf24; text-transform: uppercase; font-size: 13px; letter-spacing: 1.5px; font-weight: 800; }
+        h3 { color: #38bdf8; margin-top: 25px; border-bottom: 1px solid #334155; padding-bottom: 5px; font-size: 19px; }
+        
+        .data-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
+        .highlight { color: #38bdf8; font-family: monospace; font-weight: bold; }
+        .hot { color: #ef4444; font-family: monospace; font-weight: bold; }
+
+        .card { 
+            background: rgba(255, 255, 255, 0.04); padding: 18px; border-radius: 12px; 
+            margin-top: 15px; font-size: 14px; line-height: 1.7; border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        input[type=range] { width: 100%; margin: 18px 0 8px 0; cursor: pointer; accent-color: #ef4444; }
+
+        .quiz-option { 
+            background: #1e293b; padding: 14px; margin: 8px 0; border-radius: 8px; 
+            cursor: pointer; border: 1px solid #334155; font-size: 14px; transition: 0.2s; 
+        }
+        .quiz-option:hover { border-color: #fbbf24; background: #2a3a4f; }
+        .quiz-option.selected { border-color: #fbbf24; background: #334155; font-weight: bold; }
+        
+        #submit-quiz { 
+            width: 100%; padding: 15px; background: #ef4444; color: white; 
+            border: none; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; 
+        }
+
+        #result-display { 
+            margin-top: 15px; padding: 18px; background: #064e3b; border-radius: 10px; 
+            display: none; text-align: center; font-weight: bold; border: 1px solid #4ade80;
+        }
+
+        canvas { display: block; width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+
+<div class="simulation-area">
+    <div class="controls">
+        <h2>COMMAND CENTER</h2>
+        <div class="data-row"><span>Температура:</span> <span id="tempVal" class="hot">0°C</span></div>
+        <div class="data-row"><span>Айналым:</span> <span id="rpmVal" class="highlight">0 RPM</span></div>
+        <div class="data-row"><span>Кернеу:</span> <span id="voltVal" class="highlight">0 V</span></div>
+        <div class="data-row"><span>Эффективтілік (ПӘК):</span> <span id="effVal" style="color:#4ade80;">0%</span></div>
+        <input type="range" id="fireControl" min="0" max="100" value="0">
+        <p style="font-size: 10px; color: #94a3b8; text-align:center; margin-top: 5px;">🔥 Отын беруді реттеу (0-100)</p>
+    </div>
+    <canvas id="canvas"></canvas>
+</div>
+
+<div class="info-sidebar">
+    <h2>Энергия түрленуінің физикасы</h2>
+
+    
+    
+    <div class="card">
+        <b>Энергияның сақталу заңы:</b> Энергия жоқтан пайда болмайды және жоғалмайды, ол тек бір түрден екінші түрге ауысады. Бұл зертханада біз химиялық энергияның жылу, механикалық және, ақырында, электр энергиясына қалай айналатынын зерттейміз.
+    </div>
+
+    <h3>Түрлену кезеңдері:</h3>
+    <div class="card">
+        1. <b>Химиялық -> Жылу (Қазандық):</b> Отын (көмір, газ) жанғанда химиялық байланыстар үзіліп, жылу энергиясы (Q) бөлінеді. Бұл жылу суды қыздырып, жоғары қысымды буға айналдырады.<br>
+        2. <b>Жылу -> Кинетикалық (Турбина):</b> Бу бағытталған ағынмен турбина қалақшаларына соғылады. Будың ішкі энергиясы айналмалы қозғалыстың кинетикалық энергиясына айналады.<br>
+        3. <b>Механикалық -> Электр (Генератор):</b> Турбинамен бір біліктегі генератор роторы айналады. Магнит өрісінде өткізгіштердің қозғалысы нәтижесінде электромагниттік индукция заңы бойынша электр тогы (кернеу, V) пайда болады.
+    </div>
+
+    <h3>Пайдалы әсер коэффициенті (ПӘК):</h3>
+    <div class="card">
+        Нақты жүйелерде энергияның бір бөлігі үйкеліс, дыбыс және жылудың айналаға таралуы нәтижесінде <b>ысырап</b> болады. ПӘК — бұл пайдалы электр энергиясының жұмсалған жылу энергиясына қатынасы. Заманауи ЖЭО-ларда бұл көрсеткіш 35-45% құрайды.
+    </div>
+
+    <div class="quiz-container">
+        <h3>Білімді тексеру (Кеңейтілген Тест)</h3>
+        <div id="quiz-content"></div>
+        <button id="submit-quiz">Нәтижені көру</button>
+        <div id="result-display"></div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resize() {
+        width = canvas.parentElement.clientWidth;
+        height = canvas.parentElement.clientHeight;
+        canvas.width = width; canvas.height = height;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const slider = document.getElementById('fireControl');
+    const tempDisplay = document.getElementById('tempVal');
+    const rpmDisplay = document.getElementById('rpmVal');
+    const voltDisplay = document.getElementById('voltVal');
+    const effDisplay = document.getElementById('effVal');
+
+    let heatLevel = 0; let turbineAngle = 0; let turbineSpeed = 0; let steams = [];
+
+    function update() {
+        let targetHeat = parseInt(slider.value);
+        if (heatLevel < targetHeat) heatLevel += 0.5;
+        if (heatLevel > targetHeat) heatLevel -= 0.7;
+        
+        if (heatLevel > 20) {
+            let targetSpeed = (heatLevel - 20) * 0.006; 
+            if (turbineSpeed < targetSpeed) turbineSpeed += 0.001; 
+        } else {
+            turbineSpeed *= 0.98; 
+        }
+        if (turbineSpeed > 0.45) turbineSpeed = 0.45; 
+        turbineAngle += turbineSpeed;
+
+        tempDisplay.innerText = Math.round(heatLevel * 3) + "°C";
+        rpmDisplay.innerText = Math.round(turbineSpeed * 1000);
+        voltDisplay.innerText = (turbineSpeed * 280).toFixed(1) + " V";
+        
+        let efficiency = heatLevel > 0 ? Math.min(42, (turbineSpeed * 280) / heatLevel * 20).toFixed(1) : 0;
+        effDisplay.innerText = efficiency + "%";
+
+        if (heatLevel > 30) {
+            let chance = heatLevel / 100; 
+            if (Math.random() < chance) {
+                steams.push({
+                    x: width / 2 + (Math.random() - 0.5) * 50, 
+                    y: height - 120,
+                    vx: (Math.random() - 0.5) * 1.5,
+                    vy: -2 - (heatLevel / 20), 
+                    size: Math.random() * 8 + 6,
+                    life: 1.0
+                });
+            }
+        }
+        for (let i = steams.length - 1; i >= 0; i--) {
+            let p = steams[i]; p.x += p.vx; p.y += p.vy; p.size += 0.4; p.life -= 0.008; 
+            if (p.life <= 0) steams.splice(i, 1);
+        }
+    }
+
+    function drawTurbine(x, y) {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(turbineAngle);
+        let bladeGrad = ctx.createLinearGradient(-10, -100, 10, 100);
+        bladeGrad.addColorStop(0, "#e2e8f0"); bladeGrad.addColorStop(0.5, "#94a3b8"); bladeGrad.addColorStop(1, "#cbd5e1");
+        ctx.fillStyle = bladeGrad;
+        for (let i = 0; i < 4; i++) {
+            ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(-12, -80); ctx.lineTo(12, -80); ctx.lineTo(8, 0); ctx.fill();
+            ctx.rotate(Math.PI / 2); 
+        }
+        let hubGrad = ctx.createRadialGradient(0,0, 5, 0,0, 15);
+        hubGrad.addColorStop(0, "#cbd5e1"); hubGrad.addColorStop(1, "#475569");
+        ctx.fillStyle = hubGrad; ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = "#334155"; ctx.fillRect(x - 5, y + 15, 10, 150);
+    }
+
+    function drawBoiler() {
+        const cx = width / 2; const cy = height - 60;
+        let boilerGrad = ctx.createLinearGradient(cx - 50, cy, cx + 50, cy);
+        boilerGrad.addColorStop(0, "#334155"); boilerGrad.addColorStop(0.5, "#94a3b8"); boilerGrad.addColorStop(1, "#334155");
+        ctx.fillStyle = boilerGrad; ctx.fillRect(cx - 50, cy - 60, 100, 70);
+        ctx.fillStyle = "rgba(56, 189, 248, 0.7)"; 
+        ctx.fillRect(cx - 35, cy - 25, 70, 20);
+    }
+
+    function drawFire() {
+        const cx = width / 2; const cy = height - 40;
+        if (heatLevel > 0) {
+            ctx.globalCompositeOperation = "lighter";
+            for (let i = 0; i < 6; i++) {
+                let h = (heatLevel * 0.7) + Math.random() * 20;
+                let x = cx - 35 + (i * 14);
+                ctx.beginPath(); ctx.moveTo(x - 10, cy + 10); ctx.quadraticCurveTo(x, cy - h/2, x, cy - h);
+                ctx.quadraticCurveTo(x + 10, cy - h/2, x + 10, cy + 10);
+                let fireGrad = ctx.createLinearGradient(x, cy - h, x, cy + 10);
+                fireGrad.addColorStop(0, "rgba(255, 69, 0, 0.8)"); fireGrad.addColorStop(1, "rgba(255, 255, 255, 0.2)");
+                ctx.fillStyle = fireGrad; ctx.fill();
+            }
+            ctx.globalCompositeOperation = "source-over";
+        }
+    }
+
+    function drawGeneratorSystem() {
+        let brightness = Math.min(1, turbineSpeed / 0.45);
+        let lampX = width - 40; let lampY = 140;
+        if (brightness > 0.1) {
+            ctx.save(); ctx.beginPath(); ctx.arc(lampX, lampY, 20 + (brightness * 35), 0, Math.PI * 2);
+            let glow = ctx.createRadialGradient(lampX, lampY, 10, lampX, lampY, 55);
+            glow.addColorStop(0, `rgba(255, 255, 100, ${brightness * 0.7})`); glow.addColorStop(1, "rgba(255, 255, 100, 0)");
+            ctx.fillStyle = glow; ctx.globalCompositeOperation = "screen"; ctx.fill(); ctx.restore();
+        }
+        ctx.fillStyle = brightness > 0.2 ? "#fbbf24" : "#334155";
+        ctx.beginPath(); ctx.arc(lampX, lampY, 15, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, width, height);
+        drawBoiler(); drawFire();
+        steams.forEach(p => {
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${p.life * 0.4})`; ctx.fill();
+        });
+        drawTurbine(width/2, height/2 + 50);
+        drawGeneratorSystem();
+        update(); requestAnimationFrame(draw);
+    }
+    draw();
+
+    // ТЕСТ БӨЛІМІ (Кеңейтілген)
+    const questions = [
+        { q: "Будың ішкі энергиясы турбина қалақшаларын қозғалтқанда энергияның қай түріне айналады?", a: ["Электрлік", "Механикалық (кинетикалық)", "Химиялық"], correct: 1 },
+        { q: "Генераторда электр тогын тудыратын физикалық заң?", a: ["Ньютон заңы", "Ом заңы", "Электромагниттік индукция"], correct: 2 },
+        { q: "Симуляция бойынша бу пайда болу үшін температура кем дегенде қанша болу керек?", a: ["0°C", "20°C жоғары", "100°C жоғары"], correct: 1 },
+        { q: "Заманауи ЖЭО-ларда ПӘК (Эффективтілік) шамамен қанша?", a: ["20-25%", "35-45%", "80-90%"], correct: 1 },
+        { q: "Турбина жылдамдығы мен генераторда өндірілген кернеу арасындағы байланыс?", a: ["Тура пропорционал", "Кері пропорционал", "Байланыс жоқ"], correct: 0 },
+        { q: "АЭС-те жылу алу үшін қолданылатын ресурс?", a: ["Көмір", "Газ", "Уран"], correct: 2 }
+    ];
+
+    function initQuiz() {
+        const container = document.getElementById('quiz-content');
+        questions.forEach((item, qIdx) => {
+            const qDiv = document.createElement('div');
+            qDiv.innerHTML = `<p><b>${qIdx + 1}. ${item.q}</b></p>`;
+            item.a.forEach((ans, aIdx) => {
+                const opt = document.createElement('div'); opt.className = 'quiz-option'; opt.innerText = ans;
+                opt.onclick = () => {
+                    opt.parentElement.querySelectorAll('.quiz-option').forEach(s => s.classList.remove('selected'));
+                    opt.classList.add('selected'); opt.dataset.chosen = aIdx;
+                };
+                qDiv.appendChild(opt);
+            });
+            container.appendChild(qDiv);
+        });
+    }
+
+    document.getElementById('submit-quiz').onclick = () => {
+        let correctCount = 0;
+        document.querySelectorAll('#quiz-content > div').forEach((block, idx) => {
+            const selected = block.querySelector('.selected');
+            if (selected && parseInt(selected.dataset.chosen) === questions[idx].correct) correctCount++;
+        });
+        const res = document.getElementById('result-display'); res.style.display = 'block';
+        res.innerHTML = `Нәтиже: 6-дан ${correctCount} дұрыс! <br> ${correctCount === 6 ? "Тамаша! Сіз тақырыпты толық меңгердіңіз." : "Материалды қайта қарап шығуға кеңес береміз."}`;
+    };
+
+    initQuiz();
+</script>
+</body>
+</html>
