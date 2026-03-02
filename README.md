@@ -1,8 +1,3 @@
-🔥 Отлично. Делаем **ULTRA-PRO README**, как у топовых Flutter проектов.
-
-Скопируй всё ниже в `README.md`.
-
----
 
 # 🚀 Physics Lab
 
