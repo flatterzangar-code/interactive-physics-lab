@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-// Импорт для расширенных настроек Android
 import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'ai_chat_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,8 +21,6 @@ class PhysicsApp extends StatefulWidget {
 class _PhysicsAppState extends State<PhysicsApp> {
   late final WebViewController _controller;
 
-  // Список всех ваших 15 файлов.
-  // ВАЖНО: Имена должны СТРОГО совпадать с названиями в папке assets/www/
   final List<Map<String, String>> topics = [
     {'name': 'Басты бет', 'file': 'index.html'},
     {'name': '1. Кинематика', 'file': 'kinematics.html'},
@@ -45,12 +43,11 @@ class _PhysicsAppState extends State<PhysicsApp> {
     super.initState();
 
     _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted) // Разрешаем JavaScript для анимаций
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF0F172A))
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (String url) {
-            // Принудительно вызываем resize, чтобы Canvas подстроился под экран телефона
             _controller.runJavaScript("""
               setTimeout(function() {
                 window.dispatchEvent(new Event('resize'));
@@ -62,7 +59,6 @@ class _PhysicsAppState extends State<PhysicsApp> {
       )
       ..loadFlutterAsset('assets/www/index.html');
 
-    // Настройки для корректной работы на Android
     if (_controller.platform is AndroidWebViewController) {
       AndroidWebViewController.enableDebugging(true);
       (_controller.platform as AndroidWebViewController)
@@ -74,25 +70,35 @@ class _PhysicsAppState extends State<PhysicsApp> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Physics Lab", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Physics Lab",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: const Color(0xFF1E293B),
-        // Иконка гамбургера (меню) появится автоматически слева
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      // БОКОВОЕ МЕНЮ (Drawer)
       drawer: Drawer(
         backgroundColor: const Color(0xFF0F172A),
         child: Column(
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Color(0xFF2563eb), Color(0xFF7c3aed)]),
+                gradient: LinearGradient(
+                  colors: [Color(0xFF2563eb), Color(0xFF7c3aed)],
+                ),
               ),
               child: Center(
                 child: Text(
                   "Physics Lab\nБөлімдер",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -102,15 +108,22 @@ class _PhysicsAppState extends State<PhysicsApp> {
                 itemCount: topics.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    leading: const Icon(Icons.science_outlined, color: Color(0xFF60a5fa)),
+                    leading: const Icon(
+                      Icons.science_outlined,
+                      color: Color(0xFF60a5fa),
+                    ),
                     title: Text(
                       topics[index]['name']!,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
                     ),
                     onTap: () {
-                      // Загружаем файл напрямую! Это решит проблему черного экрана.
-                      _controller.loadFlutterAsset('assets/www/${topics[index]['file']}');
-                      Navigator.pop(context); // Закрываем меню
+                      _controller.loadFlutterAsset(
+                        'assets/www/${topics[index]['file']}',
+                      );
+                      Navigator.pop(context);
                     },
                   );
                 },
@@ -118,6 +131,23 @@ class _PhysicsAppState extends State<PhysicsApp> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF7C3AED),
+        icon: const Icon(Icons.smart_toy, color: Colors.white),
+        label: const Text(
+          "AI Chat",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AiChatPage()),
+          );
+        },
       ),
       body: SafeArea(
         child: WebViewWidget(controller: _controller),

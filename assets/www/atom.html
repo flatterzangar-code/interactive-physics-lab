@@ -1,339 +1,462 @@
 <!DOCTYPE html>
 <html lang="kk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Атом Генераторы 3D + Білім Порталы</title>
-    <style>
-        body {
-    margin: 0;
-    background-color: #050505;
-    color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    /* overflow: hidden;  <-- Мұны алып тастаймыз, себебі астына қарай айналдыру (scroll) керек */
-    display: flex;
-    flex-direction: column; /* Блоктарды бірінің астына бірін қояды */
-}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Атом Генераторы 3D + Білім Порталы</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #050505;
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
 
-.visual-section {
-    width: 100%;       /* Ені толық экран */
-    height: 50vh;      /* Биіктігі экранның жартысы (анимация үшін) */
-    position: relative;
-}
+    .visual-section {
+      width: 100%;
+      height: 50vh;
+      position: relative;
+    }
 
-.info-panel {
-    width: 100%;       /* Ені толық экран */
-    background: rgba(15, 15, 15, 0.95);
-    border-left: none; /* Сол жақтағы сызықты алып тастаймыз */
-    border-top: 1px solid rgba(0, 204, 255, 0.3); /* Үстіне сызық қосамыз */
-    padding: 20px;
-    height: auto;      /* Биіктігі мәтінге қарай өседі */
-    box-sizing: border-box;
-}
+    .info-panel {
+      width: 100%;
+      background: rgba(15, 15, 15, 0.95);
+      border-left: none;
+      border-top: 1px solid rgba(0, 204, 255, 0.3);
+      padding: 20px;
+      height: auto;
+      box-sizing: border-box;
+    }
 
-canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
 
-        /* --- БАСҚАРУ ПАНЕЛІ (АНИМАЦИЯ ҮСТІНДЕ) --- */
-        .controls {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(20, 20, 20, 0.85);
-            backdrop-filter: blur(12px);
-            padding: 10px 20px;
-            border-radius: 50px;
-            border: 1px solid rgba(0, 204, 255, 0.3);
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            z-index: 10;
-        }
+    .controls {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 20, 20, 0.85);
+      backdrop-filter: blur(12px);
+      padding: 10px 20px;
+      border-radius: 50px;
+      border: 1px solid rgba(0, 204, 255, 0.3);
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      z-index: 10;
+    }
 
-        input {
-            background: #111;
-            border: 1px solid #333;
-            color: #00ccff;
-            padding: 8px;
-            border-radius: 15px;
-            width: 50px;
-            text-align: center;
-        }
+    input {
+      background: #111;
+      border: 1px solid #333;
+      color: #00ccff;
+      padding: 8px;
+      border-radius: 15px;
+      width: 50px;
+      text-align: center;
+    }
 
-        button {
-            background: linear-gradient(45deg, #00ccff, #0088ff);
-            border: none;
-            padding: 8px 15px;
-            color: white;
-            font-weight: bold;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
+    button {
+      background: linear-gradient(45deg, #00ccff, #0088ff);
+      border: none;
+      padding: 8px 15px;
+      color: white;
+      font-weight: bold;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
 
-        button:hover { transform: scale(1.05); box-shadow: 0 0 15px #00ccff; }
+    button:hover { transform: scale(1.05); box-shadow: 0 0 15px #00ccff; }
 
-        /* --- МӘТІН СТИЛЬДЕРІ --- */
-        h2 { color: #00ccff; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        h3 { color: #ffcc00; margin-top: 25px; }
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            line-height: 1.6;
-        }
-        .example { color: #00ffaa; font-weight: bold; }
+    h2 { color: #00ccff; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    h3 { color: #ffcc00; margin-top: 25px; }
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+    .example { color: #00ffaa; font-weight: bold; }
 
-        /* --- ТЕСТ СТИЛЬДЕРІ --- */
-        .quiz-container { margin-top: 30px; padding-bottom: 50px; }
-        .question { margin-bottom: 20px; font-size: 14px; }
-        .options { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-        .option-btn {
-            background: #222;
-            color: #ccc;
-            border: 1px solid #444;
-            padding: 8px;
-            text-align: left;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .option-btn:hover { background: #333; }
-        #result-box {
-            margin-top: 20px;
-            padding: 15px;
-            background: #004466;
-            border-radius: 10px;
-            display: none;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        canvas { display: block; }
-    </style>
+    .quiz-container { margin-top: 30px; padding-bottom: 50px; }
+    .question { margin-bottom: 20px; font-size: 14px; }
+    .options { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .option-btn {
+      background: #222;
+      color: #ccc;
+      border: 1px solid #444;
+      padding: 8px;
+      text-align: left;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .option-btn:hover { background: #333; }
+    #result-box {
+      margin-top: 20px;
+      padding: 15px;
+      background: #004466;
+      border-radius: 10px;
+      display: none;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
 
 <div class="visual-section">
-    <div class="controls">
-        <span>Z:</span>
-        <input type="number" id="atomNum" value="11" min="1" max="118">
-        <button onclick="createAtom()">ЖАСАУ</button>
-        <div id="elementName" style="color: #00ccff; font-weight: bold; min-width: 100px;">
-            Натрий (Na)
-        </div>
+  <div class="controls">
+    <span>Z:</span>
+    <input type="number" id="atomNum" value="11" min="1" max="118" />
+    <button onclick="createAtom()">ЖАСАУ</button>
+    <div id="elementName" style="color:#00ccff;font-weight:bold;min-width:120px;">
+      Натрий (Na)
     </div>
-    <canvas id="canvas"></canvas>
+  </div>
+  <canvas id="canvas"></canvas>
 </div>
 
 <div class="info-panel">
-    <h2>Атом құрылысы</h2>
-    <div class="card">
-        <b>Атом</b> — заттың химиялық бөлінбейтін ең ұсақ бөлшегі. Ол оң зарядталған <b>ядродан</b> және оны айнала қозғалатын теріс зарядталған <b>электрондардан</b> тұрады.
-    </div>
+  <h2>Атом құрылысы</h2>
+  <div class="card">
+    <b>Атом</b> — заттың химиялық бөлінбейтін ең ұсақ бөлшегі. Ол оң зарядталған <b>ядродан</b> және оны айнала қозғалатын теріс зарядталған <b>электрондардан</b> тұрады.
+  </div>
 
-    <h3>Негізгі бөлшектер:</h3>
-    <ul>
-        <li><b style="color: #ff4444;">Протондар (p+):</b> Ядрода орналасқан, оң зарядты. Олардың саны элементтің реттік санын (Z) анықтайды.</li>
-        <li><b style="color: #ccc;">Нейтрондар (n0):</b> Ядрода орналасқан, заряды жоқ.</li>
-        <li><b style="color: #00ccff;">Электрондар (e-):</b> Ядроны айнала қозғалады, теріс зарядты.</li>
-    </ul>
+  <h3>Негізгі бөлшектер:</h3>
+  <ul>
+    <li><b style="color:#ff4444;">Протондар (p+):</b> Ядрода орналасқан, оң зарядты. Олардың саны элементтің реттік санын (Z) анықтайды.</li>
+    <li><b style="color:#ccc;">Нейтрондар (n0):</b> Ядрода орналасқан, заряды жоқ.</li>
+    <li><b style="color:#00ccff;">Электрондар (e-):</b> Ядроны айнала қозғалады, теріс зарядты.</li>
+  </ul>
 
-    <h3>Маңызды мысалдар:</h3>
-    <div class="card">
-        <span class="example">1. Сутегі (H):</span> Ең қарапайым атом. 1 протон және 1 электрон. Нейтроны жоқ жалғыз элемент.<br><br>
-        <span class="example">2. Оттегі (O):</span> Тіршілік үшін маңызды. 8 протон және 8 электроннан тұрады.<br><br>
-        <span class="example">3. Алтын (Au):</span> Ауыр металл. 79 протон мен 79 электрон.
-    </div>
+  <h3>Маңызды мысалдар:</h3>
+  <div class="card">
+    <span class="example">1. Сутегі (H):</span> Ең қарапайым атом. 1 протон және 1 электрон. Нейтроны жоқ жалғыз элемент.<br><br>
+    <span class="example">2. Оттегі (O):</span> Тіршілік үшін маңызды. 8 протон және 8 электроннан тұрады.<br><br>
+    <span class="example">3. Алтын (Au):</span> Ауыр металл. 79 протон мен 79 электрон.
+  </div>
 
-    <div class="quiz-container">
-        <h2>Білім тексеру (Тест)</h2>
-        <div id="quiz">
-            </div>
-        <button onclick="checkQuiz()" id="submit-quiz" style="width: 100%; margin-top: 20px;">Нәтижені көру</button>
-        <div id="result-box"></div>
-    </div>
+  <div class="quiz-container">
+    <h2>Білім тексеру (Тест)</h2>
+    <div id="quiz"></div>
+    <button onclick="checkQuiz()" id="submit-quiz" style="width:100%;margin-top:20px;">Нәтижені көру</button>
+    <div id="result-box"></div>
+  </div>
 </div>
 
 <script>
-    // --- 1. CONFIG & DATA ---
-    const ELEMENTS = {
-        1: "Сутегі (H)", 2: "Гелий (He)", 6: "Көміртек (C)", 7: "Азот (N)", 8: "Оттегі (O)",
-        11: "Натрий (Na)", 13: "Алюминий (Al)", 26: "Темір (Fe)", 29: "Мыс (Cu)", 
-        47: "Күміс (Ag)", 79: "Алтын (Au)", 80: "Сынап (Hg)", 92: "Уран (U)", 118: "Оганесон (Og)"
-    };
-    // Fill other elements generally
-    for(let i=1; i<=118; i++) { if(!ELEMENTS[i]) ELEMENTS[i] = `Элемент ${i}`; }
+/* -------------------- 1) DATA -------------------- */
+const ELEMENTS = {
+  1:"Сутегі (H)",2:"Гелий (He)",3:"Литий (Li)",4:"Бериллий (Be)",5:"Бор (B)",
+  6:"Көміртек (C)",7:"Азот (N)",8:"Оттегі (O)",9:"Фтор (F)",10:"Неон (Ne)",
+  11:"Натрий (Na)",12:"Магний (Mg)",13:"Алюминий (Al)",14:"Кремний (Si)",15:"Фосфор (P)",
+  16:"Күкірт (S)",17:"Хлор (Cl)",18:"Аргон (Ar)",19:"Калий (K)",20:"Кальций (Ca)",
+  21:"Скандий (Sc)",22:"Титан (Ti)",23:"Ванадий (V)",24:"Хром (Cr)",25:"Марганец (Mn)",
+  26:"Темір (Fe)",27:"Кобальт (Co)",28:"Никель (Ni)",29:"Мыс (Cu)",30:"Мырыш (Zn)",
+  31:"Галлий (Ga)",32:"Германий (Ge)",33:"Мышьяк (As)",34:"Селен (Se)",35:"Бром (Br)",
+  36:"Криптон (Kr)",37:"Рубидий (Rb)",38:"Стронций (Sr)",39:"Иттрий (Y)",40:"Цирконий (Zr)",
+  41:"Ниобий (Nb)",42:"Молибден (Mo)",43:"Технеций (Tc)",44:"Рутений (Ru)",45:"Родий (Rh)",
+  46:"Палладий (Pd)",47:"Күміс (Ag)",48:"Кадмий (Cd)",49:"Индий (In)",50:"Қалайы (Sn)",
+  51:"Сурьма (Sb)",52:"Теллур (Te)",53:"Йод (I)",54:"Ксенон (Xe)",55:"Цезий (Cs)",
+  56:"Барий (Ba)",57:"Лантан (La)",58:"Церий (Ce)",59:"Празеодим (Pr)",60:"Неодим (Nd)",
+  61:"Прометий (Pm)",62:"Самарий (Sm)",63:"Европий (Eu)",64:"Гадолиний (Gd)",65:"Тербий (Tb)",
+  66:"Диспрозий (Dy)",67:"Гольмий (Ho)",68:"Эрбий (Er)",69:"Тулий (Tm)",70:"Иттербий (Yb)",
+  71:"Лютеций (Lu)",72:"Гафний (Hf)",73:"Тантал (Ta)",74:"Вольфрам (W)",75:"Рений (Re)",
+  76:"Осмий (Os)",77:"Иридий (Ir)",78:"Платина (Pt)",79:"Алтын (Au)",80:"Сынап (Hg)",
+  81:"Таллий (Tl)",82:"Қорғасын (Pb)",83:"Висмут (Bi)",84:"Полоний (Po)",85:"Астат (At)",
+  86:"Радон (Rn)",87:"Франций (Fr)",88:"Радий (Ra)",89:"Актиний (Ac)",90:"Торий (Th)",
+  91:"Протактиний (Pa)",92:"Уран (U)",93:"Нептуний (Np)",94:"Плутоний (Pu)",95:"Америций (Am)",
+  96:"Кюрий (Cm)",97:"Берклий (Bk)",98:"Калифорний (Cf)",99:"Эйнштейний (Es)",100:"Фермий (Fm)",
+  101:"Менделевий (Md)",102:"Нобелий (No)",103:"Лоуренсий (Lr)",104:"Резерфордий (Rf)",105:"Дубний (Db)",
+  106:"Сиборгий (Sg)",107:"Борий (Bh)",108:"Хассий (Hs)",109:"Майтнерий (Mt)",110:"Дармштадтий (Ds)",
+  111:"Рентгений (Rg)",112:"Коперниций (Cn)",113:"Нихоний (Nh)",114:"Флеровий (Fl)",115:"Московий (Mc)",
+  116:"Ливерморий (Lv)",117:"Теннессин (Ts)",118:"Оганесон (Og)"
+};
+for (let i=1;i<=118;i++){ if(!ELEMENTS[i]) ELEMENTS[i]=`Элемент ${i}`; }
 
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const inputNum = document.getElementById('atomNum');
-    const labelName = document.getElementById('elementName');
+/* -------------------- 2) CANVAS -------------------- */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const inputNum = document.getElementById('atomNum');
+const labelName = document.getElementById('elementName');
 
-    let width, height, cx, cy;
-    const fov = 350; 
+let width, height, cx, cy;
+const fov = 350;
 
-    const nucleusParticles = [];
-    const electrons = [];
-    let nucleusAngleY = 0;
+const nucleusParticles = [];
+const electrons = [];
+let nucleusAngleY = 0;
 
-    // --- 2. INITIALIZATION ---
-    function resize() {
-        width = canvas.parentElement.clientWidth;
-        height = window.innerHeight;
-        canvas.width = width;
-        canvas.height = height;
-        cx = width / 2;
-        cy = height / 2;
+let fitScale = 1;
+
+function resize() {
+  width = canvas.parentElement.clientWidth;
+  height = canvas.parentElement.clientHeight;
+  canvas.width = width;
+  canvas.height = height;
+  cx = width / 2;
+  cy = height / 2;
+}
+window.addEventListener('resize', () => { resize(); createAtom(); });
+resize();
+
+function initNucleus() {
+  nucleusParticles.length = 0;
+  const radius = 20;
+  for (let lat=-90; lat<=90; lat+=30) {
+    const theta = lat * Math.PI / 180;
+    const rSlice = radius * Math.cos(theta);
+    const y = radius * Math.sin(theta);
+    for (let lon=0; lon<360; lon+=45) {
+      const phi = lon * Math.PI / 180;
+      nucleusParticles.push({
+        x: rSlice * Math.cos(phi),
+        y,
+        z: rSlice * Math.sin(phi),
+        color: Math.random() > 0.5 ? "#ff4444" : "#888"
+      });
     }
-    window.addEventListener('resize', resize);
-    resize();
+  }
+}
+initNucleus();
 
-    function initNucleus() {
-        nucleusParticles.length = 0;
-        const radius = 20;
-        for (let lat = -90; lat <= 90; lat += 30) {
-            const theta = lat * Math.PI / 180;
-            const rSlice = radius * Math.cos(theta);
-            const y = radius * Math.sin(theta);
-            for (let lon = 0; lon < 360; lon += 45) {
-                const phi = lon * Math.PI / 180;
-                nucleusParticles.push({ 
-                    x: rSlice * Math.cos(phi), 
-                    y: y, 
-                    z: rSlice * Math.sin(phi), 
-                    color: Math.random() > 0.5 ? "#ff4444" : "#888" 
-                });
-            }
-        }
-    }
-    initNucleus();
+function project(x,y,z){
+  x *= fitScale; y *= fitScale; z *= fitScale;
+  const scale = fov / (fov + z);
+  return { x: cx + x*scale, y: cy + y*scale, scale, z };
+}
 
-    function createAtom() {
-        let num = parseInt(inputNum.value);
-        if (isNaN(num) || num < 1) num = 1;
-        if (num > 118) num = 118;
-        inputNum.value = num;
-        labelName.innerText = ELEMENTS[num];
+function rotateY(x, z, angle) {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return { x: x*cos - z*sin, z: x*sin + z*cos };
+}
 
-        electrons.length = 0;
-        for (let i = 0; i < num; i++) {
-            electrons.push({
-                r: 60 + (Math.floor(i/8) * 40) + Math.random() * 20, 
-                speed: 0.02 + Math.random() * 0.03,
-                angle: Math.random() * Math.PI * 2,
-                tiltX: Math.random() * Math.PI,
-                tiltY: Math.random() * Math.PI,
-                history: []
-            });
-        }
-    }
+/* -------------------- 3) ELECTRONS: CREATE + PHYSICS -------------------- */
+function createAtom() {
+  let num = parseInt(inputNum.value);
+  if (isNaN(num) || num < 1) num = 1;
+  if (num > 118) num = 118;
+  inputNum.value = num;
+  labelName.innerText = ELEMENTS[num];
 
-    function project(x, y, z) {
-        const scale = fov / (fov + z);
-        return { x: cx + x * scale, y: cy + y * scale, scale: scale, z: z };
-    }
+  electrons.length = 0;
 
-    function rotateY(x, z, angle) {
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
-        return { x: x * cos - z * sin, z: x * sin + z * cos };
-    }
+  // Қабық сыйымдылықтары (қарапайым)
+  const shells = [2, 8, 18, 32, 32, 18, 8];
+  let shellIndex = 0;
+  let inShell = 0;
 
-    function animate() {
-        ctx.clearRect(0, 0, width, height);
-        const renderList = [];
-        nucleusAngleY += 0.02;
+  for (let i=0; i<num; i++) {
+    if (inShell >= shells[shellIndex]) { shellIndex++; inShell = 0; }
+    const shellR = 60 + shellIndex*40 + Math.random()*10;
+    inShell++;
 
-        nucleusParticles.forEach(p => {
-            const rot = rotateY(p.x, p.z, nucleusAngleY);
-            const proj = project(rot.x, p.y, rot.z);
-            renderList.push({ type: 'n', x: proj.x, y: proj.y, scale: proj.scale, z: proj.z, color: p.color });
-        });
+    // sphere random start
+    const t = Math.random() * Math.PI * 2;
+    const p = Math.acos(2*Math.random() - 1);
+    const x = shellR * Math.sin(p) * Math.cos(t);
+    const y = shellR * Math.cos(p);
+    const z = shellR * Math.sin(p) * Math.sin(t);
 
-        electrons.forEach(e => {
-            e.angle += e.speed;
-            const rawX = e.r * Math.cos(e.angle);
-            const rawY = e.r * Math.sin(e.angle);
-            let y1 = rawY * Math.cos(e.tiltX);
-            let z1 = rawY * Math.sin(e.tiltX);
-            let xF = rawX * Math.cos(e.tiltY) + z1 * Math.sin(e.tiltY);
-            let zF = -rawX * Math.sin(e.tiltY) + z1 * Math.cos(e.tiltY);
-            const proj = project(xF, y1, zF);
+    electrons.push({
+      x,y,z,
+      vx: (Math.random()-0.5)*1.4,
+      vy: (Math.random()-0.5)*1.4,
+      vz: (Math.random()-0.5)*1.4,
+      shellR,
+      history:[]
+    });
+  }
 
-            e.history.push({ x: proj.x, y: proj.y });
-            if (e.history.length > 15) e.history.shift();
+  // auto-fit
+  const maxShellR = electrons.reduce((m,e)=>Math.max(m,e.shellR), 60);
+  fitScale = (Math.min(width,height)*0.42) / (maxShellR + 30);
+  fitScale = Math.min(1, Math.max(0.2, fitScale));
+}
 
-            renderList.push({ type: 'e', x: proj.x, y: proj.y, scale: proj.scale, z: zF, color: '#00ccff', h: [...e.history] });
-        });
+const kRepel = 2000;
+const kOrbit = 0.02;
 
-        renderList.sort((a, b) => b.z - a.z);
+// ✅ ЕНДІ ҚАТЫП ҚАЛМАСЫН:
+const damping = 0.975;   // қозғалысты сақтайды
+const maxSpeed = 8;
 
-        renderList.forEach(obj => {
-            if(obj.type === 'e' && obj.h.length > 1) {
-                ctx.beginPath();
-                ctx.moveTo(obj.h[0].x, obj.h[0].y);
-                obj.h.forEach(pt => ctx.lineTo(pt.x, pt.y));
-                ctx.strokeStyle = "rgba(0, 204, 255, 0.15)";
-                ctx.stroke();
-            }
-            const size = (obj.type === 'n' ? 4 : 6) * obj.scale;
-            ctx.beginPath();
-            ctx.arc(obj.x, obj.y, Math.max(1, size), 0, Math.PI * 2);
-            ctx.fillStyle = obj.color;
-            if(obj.type === 'e') { ctx.shadowBlur = 5; ctx.shadowColor = "#00ccff"; }
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        });
-        requestAnimationFrame(animate);
-    }
+const kSpin = 0.08;     // айналдыратын күш
+const minKick = 0.08;    // тым баяуласа, қайта қозғау
 
-    // --- 3. QUIZ LOGIC ---
-    const quizData = [
-        { q: "Атомның ядросында қандай бөлшектер болады?", a: ["Протондар мен нейтрондар", "Тек электрондар", "Электрондар мен протондар"], c: 0 },
-        { q: "Электронның заряды қандай?", a: ["Оң (+)", "Теріс (-)", "Заряды жоқ"], c: 1 },
-        { q: "Элементтің реттік санын (Z) не анықтайды?", a: ["Нейтрондар саны", "Электрондар саны", "Протондар саны"], c: 2 },
-        { q: "Сутегі атомында не жоқ?", a: ["Протон", "Электрон", "Нейтрон"], c: 2 },
-        { q: "Атомның массасы негізінен қайда шоғырланған?", a: ["Электрондарда", "Ядрода", "Орбиталарда"], c: 1 }
-    ];
+function stepPhysics() {
+  for (let i=0; i<electrons.length; i++) {
+    const a = electrons[i];
+    let ax=0, ay=0, az=0;
 
-    function loadQuiz() {
-        const container = document.getElementById('quiz');
-        quizData.forEach((data, index) => {
-            const qDiv = document.createElement('div');
-            qDiv.className = 'question';
-            qDiv.innerHTML = `<p>${index + 1}. ${data.q}</p>
-                <div class="options">
-                    ${data.a.map((opt, i) => `<button class="option-btn" onclick="selectOpt(${index}, ${i}, this)">${opt}</button>`).join('')}
-                </div>`;
-            container.appendChild(qDiv);
-        });
-    }
+    // 1) repulsion
+    for (let j=0; j<electrons.length; j++) {
+      if (i===j) continue;
+      const b = electrons[j];
 
-    let userAnswers = new Array(5).fill(null);
-    function selectOpt(qIdx, oIdx, btn) {
-        userAnswers[qIdx] = oIdx;
-        const buttons = btn.parentElement.querySelectorAll('.option-btn');
-        buttons.forEach(b => b.style.borderColor = "#444");
-        btn.style.borderColor = "#00ccff";
-    }
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const dz = a.z - b.z;
 
-    function checkQuiz() {
-        let score = 0;
-        userAnswers.forEach((ans, i) => { if(ans === quizData[i].c) score++; });
-        const resBox = document.getElementById('result-box');
-        resBox.style.display = "block";
-        resBox.innerHTML = `Нәтиже: 5-тен ${score} дұрыс!<br>${score === 5 ? "Керемет! Сіз атом маманысыз!" : "Тағы қайталап көріңіз."}`;
+      const dist2 = dx*dx + dy*dy + dz*dz + 80;
+      const dist = Math.sqrt(dist2);
+
+      const f = kRepel / dist2;
+      ax += (dx/dist)*f;
+      ay += (dy/dist)*f;
+      az += (dz/dist)*f;
     }
 
-    createAtom();
-    animate();
-    loadQuiz();
+    // 2) attraction to shell radius
+    const rx=a.x, ry=a.y, rz=a.z;
+    const r = Math.sqrt(rx*rx + ry*ry + rz*rz) + 1e-6;
+    const dr = (a.shellR - r);
+
+    ax += (rx/r) * (dr*kOrbit);
+    ay += (ry/r) * (dr*kOrbit);
+    az += (rz/r) * (dr*kOrbit);
+
+    // ✅ 3) tangential spin around Y axis: (-z,0,x)
+    const tx = -rz;
+    const tz = rx;
+    const tLen = Math.sqrt(tx*tx + tz*tz) + 1e-6;
+    const spin = kSpin * (80 / (a.shellR + 20));
+
+    ax += (tx/tLen) * spin;
+    az += (tz/tLen) * spin;
+
+    // integrate velocity + damping
+    a.vx = (a.vx + ax) * damping;
+    a.vy = (a.vy + ay) * damping;
+    a.vz = (a.vz + az) * damping;
+
+    // ✅ if nearly stopped -> tiny kick
+    const sp2 = a.vx*a.vx + a.vy*a.vy + a.vz*a.vz;
+    if (sp2 < minKick*minKick) {
+      a.vx += (Math.random()-0.5) * minKick;
+      a.vy += (Math.random()-0.5) * minKick;
+      a.vz += (Math.random()-0.5) * minKick;
+    }
+
+    // clamp speed
+    const sp = Math.sqrt(sp2);
+    if (sp > maxSpeed) {
+      a.vx = (a.vx/sp)*maxSpeed;
+      a.vy = (a.vy/sp)*maxSpeed;
+      a.vz = (a.vz/sp)*maxSpeed;
+    }
+  }
+
+  // integrate position
+  for (const e of electrons) {
+    e.x += e.vx;
+    e.y += e.vy;
+    e.z += e.vz;
+  }
+}
+
+/* -------------------- 4) ANIMATION -------------------- */
+function animate() {
+  ctx.clearRect(0,0,width,height);
+  const renderList = [];
+  nucleusAngleY += 0.02;
+
+  // nucleus
+  nucleusParticles.forEach(p=>{
+    const rot = rotateY(p.x, p.z, nucleusAngleY);
+    const proj = project(rot.x, p.y, rot.z);
+    renderList.push({type:'n', x:proj.x, y:proj.y, scale:proj.scale, z:proj.z, color:p.color});
+  });
+
+  // electrons
+  stepPhysics();
+  electrons.forEach(e=>{
+    const proj = project(e.x, e.y, e.z);
+
+    e.history.push({x:proj.x, y:proj.y});
+    if (e.history.length>15) e.history.shift();
+
+    renderList.push({type:'e', x:proj.x, y:proj.y, scale:proj.scale, z:e.z, color:'#00ccff', h:[...e.history]});
+  });
+
+  // depth sort
+  renderList.sort((a,b)=>b.z - a.z);
+
+  // draw
+  renderList.forEach(obj=>{
+    if (obj.type==='e' && obj.h.length>1){
+      ctx.beginPath();
+      ctx.moveTo(obj.h[0].x, obj.h[0].y);
+      obj.h.forEach(pt=>ctx.lineTo(pt.x, pt.y));
+      ctx.strokeStyle = "rgba(0, 204, 255, 0.15)";
+      ctx.stroke();
+    }
+
+    const size = (obj.type==='n' ? 4 : 6) * obj.scale;
+    ctx.beginPath();
+    ctx.arc(obj.x, obj.y, Math.max(1,size), 0, Math.PI*2);
+    ctx.fillStyle = obj.color;
+
+    if (obj.type==='e'){ ctx.shadowBlur = 6; ctx.shadowColor="#00ccff"; }
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+
+  requestAnimationFrame(animate);
+}
+
+/* -------------------- 5) QUIZ -------------------- */
+const quizData = [
+  { q:"Атомның ядросында қандай бөлшектер болады?", a:["Протондар мен нейтрондар","Тек электрондар","Электрондар мен протондар"], c:0 },
+  { q:"Электронның заряды қандай?", a:["Оң (+)","Теріс (-)","Заряды жоқ"], c:1 },
+  { q:"Элементтің реттік санын (Z) не анықтайды?", a:["Нейтрондар саны","Электрондар саны","Протондар саны"], c:2 },
+  { q:"Сутегі атомында не жоқ?", a:["Протон","Электрон","Нейтрон"], c:2 },
+  { q:"Атомның массасы негізінен қайда шоғырланған?", a:["Электрондарда","Ядрода","Орбиталарда"], c:1 }
+];
+
+function loadQuiz() {
+  const container = document.getElementById('quiz');
+  container.innerHTML = "";
+  quizData.forEach((data,index)=>{
+    const qDiv = document.createElement('div');
+    qDiv.className = 'question';
+    qDiv.innerHTML = `<p>${index+1}. ${data.q}</p>
+      <div class="options">
+        ${data.a.map((opt,i)=>`<button class="option-btn" onclick="selectOpt(${index},${i},this)">${opt}</button>`).join('')}
+      </div>`;
+    container.appendChild(qDiv);
+  });
+}
+
+let userAnswers = new Array(5).fill(null);
+function selectOpt(qIdx, oIdx, btn) {
+  userAnswers[qIdx] = oIdx;
+  const buttons = btn.parentElement.querySelectorAll('.option-btn');
+  buttons.forEach(b=>b.style.borderColor="#444");
+  btn.style.borderColor="#00ccff";
+}
+
+function checkQuiz() {
+  let score=0;
+  userAnswers.forEach((ans,i)=>{ if(ans===quizData[i].c) score++; });
+  const resBox = document.getElementById('result-box');
+  resBox.style.display="block";
+  resBox.innerHTML = `Нәтиже: 5-тен ${score} дұрыс!<br>${score===5 ? "Керемет! Сіз атом маманысыз!" : "Тағы қайталап көріңіз."}`;
+}
+
+/* -------------------- START -------------------- */
+createAtom();
+animate();
+loadQuiz();
 </script>
-
 </body>
 </html>
